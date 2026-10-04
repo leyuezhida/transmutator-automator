@@ -14,7 +14,7 @@ import java.util.List;
  * 此时 static 字段必须<b>已经</b>由静态块准备好，不能依赖构造函数。
  * 所以这里 INSTANCE 只是 Forge 的形式要求，实际读写都走静态字段。
  * <p>
- * 几处默认值来自孖变台自身的权重规律（见 MC百科 item/635753）：
+ * 几处默认值来自嬗变台自身的权重规律（见 MC百科 item/635753）：
  * <ul>
  *   <li><b>增重用 2 个</b>：放入时权重 = 默认权重 + log₁₀(数量)³。wiki 推荐 3 个最佳，
  *       但 2 个材料省一半、权重增益已可观，所以做成可配置且默认 2；</li>
@@ -29,10 +29,10 @@ public final class TransmutatorConfig {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
 
         // ==================== 基本行为 ====================
-        b.comment("孖变台自动化的基本行为").push("general");
+        b.comment("嬗变台自动化的基本行为").push("general");
 
         ENABLED = b
-                .comment("总开关。关闭后模组完全不介入，孖变台行为与原版一致。",
+                .comment("总开关。关闭后模组完全不介入，嬗变台行为与原版一致。",
                         "提示：即使关闭，/ta 命令仍然可用。")
                 .define("enabled", false);
 
@@ -43,8 +43,8 @@ public final class TransmutatorConfig {
                 .defineInRange("intervalTicks", 4, 1, 20);
 
         STOP_ON_LOW_EXP = b
-                .comment("经验不足以支付下一次孖变时，是否自动停止。",
-                        "强烈建议保持开启：孖变台每转一次消耗 3 级经验，",
+                .comment("经验不足以支付下一次嬗变时，是否自动停止。",
+                        "强烈建议保持开启：嬗变台每转一次消耗 3 级经验，",
                         "经验不足时服务端会拒绝请求，玩家会被卡在 GUI 里。")
                 .define("stopOnLowExp", true);
 
@@ -73,7 +73,7 @@ public final class TransmutatorConfig {
         b.pop();
 
         // ==================== 摆放建议 ====================
-        b.comment("孖变台内的物品摆放建议（模组不自动执行，仅用于日志提示）").push("advice");
+        b.comment("嬗变台内的物品摆放建议（模组不自动执行，仅用于日志提示）").push("advice");
 
         WEIGHT_GAIN_COUNT = b
                 .comment("想提升某个物品权重时，一次放入几个。",

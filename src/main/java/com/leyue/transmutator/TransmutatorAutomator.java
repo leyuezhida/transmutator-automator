@@ -17,9 +17,9 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 /**
- * 孖变台自动助手 —— 入口。
+ * 嬗变台自动助手 —— 入口。
  * <p>
- * <b>这是个纯客户端模组</b>：孖变台的规则、随机结果与经验扣除全部在服务端，
+ * <b>这是个纯客户端模组</b>：嬗变台的规则、随机结果与经验扣除全部在服务端，
  * 本模组只做一件事——代替玩家发出合法的嬗变请求（等同按了界面上的按钮），
  * 因此不会凭空产出物品，也不会绕过任何服务端校验。
  */
@@ -43,7 +43,7 @@ public final class TransmutatorAutomator {
         MinecraftForge.EVENT_BUS.addListener(TransmutatorCommand::onRegisterCommands);
 
         MinecraftForge.EVENT_BUS.register(this);
-        TransmutatorLog.info("孖变台自动助手已加载（纯客户端）");
+        TransmutatorLog.info("嬗变台自动助手已加载（纯客户端）");
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {

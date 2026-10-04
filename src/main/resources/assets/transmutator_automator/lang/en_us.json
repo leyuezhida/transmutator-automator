@@ -1,5 +1,5 @@
 {
-  "commands.ta.usage": "Usage: /ta mark <item> to add a target; /ta unmark <item>; /ta list; /ta clear; /ta status; /ta count <n>",
+  "commands.ta.usage": "The panel is on the left of the transmutation table UI. Commands: /ta mark <item> | /ta unmark <item> | /ta list | /ta clear | /ta status | /ta count <n>",
   "commands.ta.unresolved": "Cannot resolve '%s'. Use a registry name (minecraft:diamond) or the in-game name (diamond)",
   "commands.ta.added": "Target item added: %s",
   "commands.ta.already": "%s is already a target",
@@ -9,5 +9,12 @@
   "commands.ta.empty": "No target items yet. Use /ta mark <item> to add one.",
   "commands.ta.cleared": "Cleared the target list",
   "commands.ta.status.line1": "Auto-transmute: %s  collected %s / %s",
-  "commands.ta.count_set": "Target count set to %s"
+  "commands.ta.count_set": "Target count set to %s",
+  "gui.transmutator_automator.no_targets": "Click an inventory item",
+  "gui.transmutator_automator.on": "Auto: on",
+  "gui.transmutator_automator.off": "Auto: off",
+  "gui.transmutator_automator.mode_all": "Only if all three match",
+  "gui.transmutator_automator.mode_any": "Pick on any match",
+  "gui.transmutator_automator.short_title": "Auto",
+  "gui.transmutator_automator.clear": "Clear targets"
 }

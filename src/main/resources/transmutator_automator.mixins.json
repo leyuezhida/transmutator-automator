@@ -9,7 +9,10 @@
   },
   "client": [
     "MixinUpdateTransmutablesAccessor",
-    "MixinUpdateTransmutablesHandler"
+    "MixinUpdateTransmutablesHandler",
+    "MixinAbstractContainerScreen",
+    "MixinTransmutationTableGuiAccessor",
+    "MixinTransmutationTableGui"
   ],
   "mixins": []
 }

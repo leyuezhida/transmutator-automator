@@ -1,5 +1,5 @@
 {
-  "commands.ta.usage": "用法：/ta mark <物品> 添加标记物品；/ta unmark <物品> 移除；/ta list 查看；/ta clear 清空；/ta status 状态；/ta count <数量> 设目标数量",
+  "commands.ta.usage": "面板就在嬗变台界面左侧。指令：/ta mark <物品> | /ta unmark <物品> | /ta list | /ta clear | /ta status | /ta count <数量>",
   "commands.ta.unresolved": "无法识别「%s」。请用注册名（如 minecraft:diamond）或游戏内中文名（如 钻石）",
   "commands.ta.added": "已添加标记物品：%s",
   "commands.ta.already": "%s 已经在标记列表里了",
@@ -8,6 +8,13 @@
   "commands.ta.list": "当前标记物品：",
   "commands.ta.empty": "标记物品列表为空。用 /ta mark <物品> 添加想刷的物品。",
   "commands.ta.cleared": "已清空标记物品列表",
-  "commands.ta.status.line1": "自动孖变：%s  已刷 %s / %s",
-  "commands.ta.count_set": "目标数量已设为 %s"
+  "commands.ta.status.line1": "自动嬗变：%s  已刷 %s / %s",
+  "commands.ta.count_set": "目标数量已设为 %s",
+  "gui.transmutator_automator.no_targets": "点背包物品设为目标",
+  "gui.transmutator_automator.on": "自动嬗变：开",
+  "gui.transmutator_automator.off": "自动嬗变：关",
+  "gui.transmutator_automator.mode_all": "三个都目标才点",
+  "gui.transmutator_automator.mode_any": "见到目标就点",
+  "gui.transmutator_automator.short_title": "自动嬗变",
+  "gui.transmutator_automator.clear": "清空目标"
 }

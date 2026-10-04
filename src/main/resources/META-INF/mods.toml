@@ -26,7 +26,7 @@ displayTest="IGNORE_ALL_VERSION"
     ordering="NONE"
     side="CLIENT"
 
-# 孖变台由 Alex's Mobs 提供
+# 嬗变台由 Alex's Mobs 提供
 [[dependencies.${mod_id}]]
     modId="alexsmobs"
     mandatory=true

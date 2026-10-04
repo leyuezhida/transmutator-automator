@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 持有当前孖变台GUI 上的三个候选物品。
+ * 持有当前嬗变台GUI 上的三个候选物品。
  * <p>
  * <b>数据从哪来</b>：Alex's Mobs 的服务端在每次刷新候选后，会给客户端发
  * {@code MessageUpdateTransmutablesToDisplay}，而它的三个字段
@@ -42,7 +42,7 @@ public final class CandidateSnapshot {
      * @param first     候选 1
      * @param second    候选 2
      * @param third     候选 3
-     * @param container 当前打开的孖变台菜单 id
+     * @param container 当前打开的嬗变台菜单 id
      */
     public static void accept(int id, ItemStack first, ItemStack second, ItemStack third,
                               int container) {
@@ -95,7 +95,7 @@ public final class CandidateSnapshot {
         return version;
     }
 
-    /** 当前菜单 id；未打开孖变台时为 -1。 */
+    /** 当前菜单 id；未打开嬗变台时为 -1。 */
     public static int containerId() {
         return containerId;
     }

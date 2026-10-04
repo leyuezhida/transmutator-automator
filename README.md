@@ -1,4 +1,4 @@
-# Transmutator Automator（孖变台自动助手）
+# Transmutator Automator（嬗变台自动助手）
 
 **纯客户端** Forge 模组（1.20.1），为 [Alex's Mobs](https://modrinth.com/mod/alexs-mobs) 的**嬗变台**提供自动化。
 
@@ -17,7 +17,7 @@
 ## 怎么用
 
 1. 装好本模组与 Alex's Mobs（客户端即可，**服务器不需要装**）
-2. 在孖变台里**放 2 个**你想刷的物品（提权重用 2 个最划算，见下）
+2. 在嬗变台里**放 2 个**你想刷的物品（提权重用 2 个最划算，见下）
 3. 用命令标记目标：
    ```
    /ta mark 钻石          # 也接受 minecraft:diamond
@@ -25,9 +25,9 @@
    /ta count 128          # 想刷 128 个就改数量
    /ta status             # 看当前状态
    ```
-4. 打开孖变台，模组自动接管
+4. 打开嬗变台，模组自动接管
 
-> 注意：第 2 步的放物品需要你自己做。**纯客户端模组无法自动把物品放进孖变台**——
+> 注意：第 2 步的放物品需要你自己做。**纯客户端模组无法自动把物品放进嬗变台**——
 > 那是服务端容器的状态变更，客户端只能通过"点击"请求，没有权限直接改。
 
 ## 为什么纯客户端就够
@@ -67,7 +67,7 @@ MessageTransmuteFromMenu(int playerId, int choice)
 | 键 | 默认 | 说明 |
 |----|------|------|
 | `general.enabled` | false | 总开关。**首次使用请先开这个** |
-| `general.intervalTicks` | 4 | 两次孖变的间隔（tick） |
+| `general.intervalTicks` | 4 | 两次嬗变的间隔（tick） |
 | `general.stopOnLowExp` | true | 经验不足时自动停止 |
 | `target.targetCount` | 64 | 刷到多少个就停 |
 | `target.requireAllThree` | false | true = 三个候选全是目标才点（更保守） |
@@ -99,5 +99,5 @@ MessageTransmuteFromMenu(int playerId, int choice)
 ## 已知限制
 
 - 放物品需手动（原因见上）
-- 模组无法"重掷"候选 —— 孖变台每次只能刷一次才换候选，想拿目标只能等它自然出现
+- 模组无法"重掷"候选 —— 嬗变台每次只能刷一次才换候选，想拿目标只能等它自然出现
 - 依赖 Alex's Mobs 的内部类结构，该模组大版本更新时可能失效

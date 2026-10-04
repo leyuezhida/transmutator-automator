@@ -16,7 +16,7 @@ import java.util.Set;
  * （比如潜影壳与潜影壳块），也可能只有中文名。因此按注册名匹配为主，
  * 同时容忍玩家写中文名——找不到对应物品时会给出提示而不是静默失效。
  * <p>
- * <b>注意</b>：只比对物品本身，<b>不看 NBT</b>。孖变台产出的是全新物品，
+ * <b>注意</b>：只比对物品本身，<b>不看 NBT</b>。嬗变台产出的是全新物品，
  * 附魔与耐久没有意义；带自定义 NBT 的"同一物品"对刷取来说也视为同一种。
  */
 public final class MarkerMatcher {
@@ -82,7 +82,7 @@ public final class MarkerMatcher {
     /**
      * 判断物品栈是否命中目标。
      * <p>
-     * <b>空栈不算命中</b>：孖变台偶尔会给出空槽，那是"尚未生成"，
+     * <b>空栈不算命中</b>：嬗变台偶尔会给出空槽，那是"尚未生成"，
      * 不是"出了一个不想要的物品"。把它当命中会导致对着空气点。
      */
     public static boolean isMarked(ItemStack stack, Set<Item> targets) {

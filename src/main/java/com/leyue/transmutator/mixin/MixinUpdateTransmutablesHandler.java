@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.function.Supplier;
 
 /**
- * 截获 Alex's Mobs 发给客户端的"更新孖变台候选"消息。
+ * 截获 Alex's Mobs 发给客户端的"更新嬗变台候选"消息。
  * <p>
  * <b>为什么必须用 Mixin</b>：这个包的内容
  * （{@code stack1 / stack2 / stack3}）虽然字段是 public，
@@ -40,7 +40,7 @@ public abstract class MixinUpdateTransmutablesHandler {
             Supplier<net.minecraftforge.network.NetworkEvent.Context> ctxSupplier,
             CallbackInfo ci) {
         // 当前打开的菜单 id —— MessageTransmuteFromMenu 只需要 choice，
-        // 但保留 containerId 有助于判断"玩家是不是换了另一张孖变台"
+        // 但保留 containerId 有助于判断"玩家是不是换了另一张嬗变台"
         int container = -1;
         var player = Minecraft.getInstance().player;
         if (player != null) {

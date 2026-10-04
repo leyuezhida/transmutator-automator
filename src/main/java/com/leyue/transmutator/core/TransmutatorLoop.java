@@ -23,9 +23,9 @@ import java.util.Set;
  *   <li>没找到就什么都不做，等下一次候选刷新（服务端发新包后版本号自增）。</li>
  * </ol>
  * <p>
- * <b>为什么"没找到就等"是对的</b>：孖变台每次只能刷一次才换候选，
+ * <b>为什么"没找到就等"是对的</b>：嬗变台每次只能刷一次才换候选，
  * 客户端无法要求"重掷一次"。所以想拿目标物品，只能等它自然出现在候选里
- * ——这也是孖变台规则的一部分（权重由服务端维护）。
+ * ——这也是嬗变台规则的一部分（权重由服务端维护）。
  */
 public final class TransmutatorLoop {
 
@@ -57,7 +57,7 @@ public final class TransmutatorLoop {
         }
     }
 
-    /** 打开孖变台时重置状态。 */
+    /** 打开嬗变台时重置状态。 */
     public static void onScreenOpened() {
         collected = 0;
         handledVersion = -1;
@@ -117,7 +117,7 @@ public final class TransmutatorLoop {
         if (player != null && player.experienceLevel < EXP_PER_TRANSMUTE) {
             if (TransmutatorConfig.STOP_ON_LOW_EXP.get() && stopReason == null) {
                 stopReason = "经验不足（需要 " + EXP_PER_TRANSMUTE + " 级）";
-                TransmutatorLog.info("经验不足，自动孖变已停止：当前 {} 级",
+                TransmutatorLog.info("经验不足，自动嬗变已停止：当前 {} 级",
                         player.experienceLevel);
             }
             return false;

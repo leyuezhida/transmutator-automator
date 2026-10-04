@@ -61,6 +61,12 @@ public final class TransmutatorCommand {
                                         IntegerArgumentType.getInteger(ctx, "value"))))));
     }
 
+    /**
+     * 不带子命令时：说明面板在哪。
+     * <p>
+     * 面板现在<b>依附在嬗变台界面</b>上（打开嬗变台即可见），
+     * 指令退为备份入口，供脚本或不便开界面时使用。
+     */
     private static int usage(CommandSourceStack source) {
         source.sendSuccess(() -> Component.translatable("commands.ta.usage"), false);
         return 1;
