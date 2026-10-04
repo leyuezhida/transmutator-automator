@@ -62,11 +62,25 @@ public abstract class MixinAbstractContainerScreen {
      * <b>诊断日志（临时）</b>：记录第一次点击的位置与两方判定，
      * 用来区分"事件没进来""进来了但没命中"。确认修好后可删。
      */
-    @Inject(method = "m_6375_", at = @At("TAIL"), remap = false, require = 0)
+    /**
+     * 面板的点击兜底。
+     * <p>
+     * <b>{@code cancellable = true} 不能少</b>：这里用了
+     * {@code cir.setReturnValue(true)}，而 Mixin 只有在声明了 cancellable 时
+     * 才允许这么做，否则运行时会抛
+     * {@code CancellationException: The call m_6375_ is not cancellable}
+     * —— <b>直接让客户端崩溃</b>。这个错误在开发环境不出现
+     * （那边 require=0 会静默跳过注入），只在真实整合包里炸。
+     * <p>
+     * <b>为什么先问面板</b>：原版 {@code mouseClicked} 几乎总是返回 true，
+     * 早先写的 {@code if (cir.getReturnValue()) return;} 会让面板
+     * 一次都得不到检查机会，表现为"点不动"。现在反过来 ——
+     * 面板区域贴在字变台 GUI 之外，与原版的槽位/按钮不重叠，两者可共存。
+     */
+    @Inject(method = "m_6375_", at = @At("TAIL"), remap = false,
+            require = 0, cancellable = true)
     private void ta$onClick(double mouseX, double mouseY, int button,
                             CallbackInfoReturnable<Boolean> cir) {
-        // 注意顺序：先问面板，再看原版。
-        // 面板区域贴在字变台 GUI 之外，与原版的槽位/按钮不重叠，两者可共存。
         if (TransmutatorPanel.mouseClicked(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
