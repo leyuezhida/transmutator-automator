@@ -46,14 +46,30 @@ public abstract class MixinAbstractContainerScreen {
      * {@code m_6375_} 是生产环境里 {@code mouseClicked} 的 SRG 名。
      * {@code require = 0}：找不到注入目标时跳过而不是抛异常。
      */
+    /**
+     * 面板的点击兜底。
+     * <p>
+     * <b>关键：不能因为"原版已处理"就跳过</b>。这是本项目最隐蔽的一个 bug。
+     * 原版 {@code mouseClicked} 几乎总是返回 {@code true}（它对界面内任意位置
+     * 都会给出处理结果），早先的写法是
+     * {@code if (cir.getReturnValue()) return;} ——
+     * 结果面板**一次都得不到检查机会**，表现为"点不动"，而且毫无错误信息。
+     * <p>
+     * 正确做法是<b>先让面板检查</b>：面板的区域都贴在嬗变台 GUI <b>之外</b>，
+     * 与原版的槽位、按钮不重叠，所以两者可以共存。
+     * 只有当面板也没命中时，才保持原版的返回值。
+     * <p>
+     * <b>诊断日志（临时）</b>：记录第一次点击的位置与两方判定，
+     * 用来区分"事件没进来""进来了但没命中"。确认修好后可删。
+     */
     @Inject(method = "m_6375_", at = @At("TAIL"), remap = false, require = 0)
     private void ta$onClick(double mouseX, double mouseY, int button,
                             CallbackInfoReturnable<Boolean> cir) {
-        if (cir.getReturnValue()) {
-            return; // 原版已处理
-        }
+        // 注意顺序：先问面板，再看原版。
+        // 面板区域贴在字变台 GUI 之外，与原版的槽位/按钮不重叠，两者可共存。
         if (TransmutatorPanel.mouseClicked(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
     }
+
 }

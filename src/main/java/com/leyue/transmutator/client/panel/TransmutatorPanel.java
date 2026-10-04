@@ -323,11 +323,14 @@ public class TransmutatorPanel {
         g.fill(x + SLOT - 1, y + 1, x + SLOT, y + SLOT - 1, color);
     }
 
-    private static void writeConfig() {
-        TransmutatorConfig.SPEC.save();
-        TransmutatorLoop.reloadTargets();
-    }
-
+    /**
+     * 把界面上的列表写回配置。
+     * <p>
+     * <b>只改内存，不落盘。</b>点击时立刻 {@code SPEC.save()} 会同步写磁盘，
+     * 而点击正发生在 GUI 事件处理中 —— 实测这样会让游戏卡死无响应。
+     * 落盘推迟到 {@link #flush()}，由<b>关闭字变台界面</b>时统一做：
+     * 那时事件处理早已结束，一次会话也最多写一次盘。
+     */
     private static void save() {
         List<String> list = TransmutatorConfig.markerList();
         list.clear();
@@ -337,8 +340,22 @@ public class TransmutatorPanel {
                 list.add(key.toString());
             }
         }
-        writeConfig();
+        // 只让运行时立刻生效（重新解析目标物品），不碰磁盘
+        TransmutatorLoop.reloadTargets();
+        dirty = true;
     }
+
+    /** 真正落盘。由界面关闭时调用。 */
+    public static void flush() {
+        if (!dirty) {
+            return;
+        }
+        dirty = false;
+        TransmutatorConfig.SPEC.save();
+    }
+
+    /** 是否有尚未落盘的改动。 */
+    private static boolean dirty;
 
     /**
      * 命中检测：坐标落在本帧任一区域内则执行其动作。
@@ -358,6 +375,7 @@ public class TransmutatorPanel {
         }
         return false;
     }
+
 
     /** 可点击区域。 */
     private record Hotspot(int x, int y, int w, int h, Runnable action) {
