@@ -1,0 +1,13 @@
+{
+  "commands.ta.usage": "Usage: /ta mark <item> to add a target; /ta unmark <item>; /ta list; /ta clear; /ta status; /ta count <n>",
+  "commands.ta.unresolved": "Cannot resolve '%s'. Use a registry name (minecraft:diamond) or the in-game name (diamond)",
+  "commands.ta.added": "Target item added: %s",
+  "commands.ta.already": "%s is already a target",
+  "commands.ta.removed": "Target item removed: %s",
+  "commands.ta.not_marked": "%s is not a target",
+  "commands.ta.list": "Current target items:",
+  "commands.ta.empty": "No target items yet. Use /ta mark <item> to add one.",
+  "commands.ta.cleared": "Cleared the target list",
+  "commands.ta.status.line1": "Auto-transmute: %s  collected %s / %s",
+  "commands.ta.count_set": "Target count set to %s"
+}

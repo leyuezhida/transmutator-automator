@@ -1,0 +1,35 @@
+# IDE
+bin
+out
+*.launch
+.settings
+.metadata
+.classpath
+.project
+*.ipr
+*.iws
+*.iml
+.idea
+.vscode
+
+# Gradle
+build
+.gradle
+!gradle/wrapper/gradle-wrapper.jar
+
+# Minecraft
+run
+run-data
+runs
+*.launch
+
+# 本地 maven 仓库：里面是 Alex's Mobs 的 jar，不对外分发
+# （该 jar 有自己的授权，改版本管理器时代替它）
+mcmodsrepo/
+
+# WorkBuddy local data
+.workbuddy
+
+# 编辑器
+*.swp
+.DS_Store

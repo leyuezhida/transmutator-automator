@@ -1,0 +1,29 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+issueTrackerURL="https://github.com/leyuezhida/maidmining/issues"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description='''${mod_description}'''
+
+# 纯客户端模组：专用服务器不能装
+displayTest="IGNORE_ALL_VERSION"
+
+# 依赖 Alex's Mobs（孖变台由它提供）
+[[dependencies.${mod_id}]]
+    modId="alexsmobs"
+    type="required"
+    versionRange="[1.22,)"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="forge"
+    type="required"
+    versionRange="${forge_version_range}"
+    ordering="NONE"
+    side="CLIENT"

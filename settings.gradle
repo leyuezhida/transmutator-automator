@@ -1,0 +1,27 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            name = 'MinecraftForge'
+            url = 'https://maven.minecraftforge.net/'
+        }
+        // Parchment 映射：ForgeGradle 6 需要 Librarian 插件，
+        // 而它只发布在这个仓库。少了这一行会报
+        // "Plugin [id: 'org.parchmentmc.librarian.forgegradle'] was not found"
+        maven {
+            name = 'ParchmentMC'
+            url = 'https://maven.parchmentmc.org'
+        }
+        // 兜底镜像：网络抖动时先试阿里云
+        maven {
+            name = 'Aliyun'
+            url = 'https://maven.aliyun.com/repository/public'
+        }
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.7.0'
+}
+
+rootProject.name = 'transmutator-automator'

@@ -1,0 +1,105 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
+
+// 纯客户端模组：两端都设成客户端，server 端不需要存在
+minecraft {
+    mappings channel: mapping_channel, version: mapping_version
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+        client {
+            // Alex's Mobs 是 compileOnly 依赖，runClient 的运行类路径会包含
+            // compileClasspath（见 dependencies 块），所以开发环境里能直接打开孖变台，
+            // 不需要在这里再声明一次 —— mods{} 只接受 SourceSet，喂依赖会报
+            // "Could not find method source()"
+        }
+        // 纯客户端模组：server / gameTestServer / data 全部不需要
+    }
+}
+
+repositories {
+    // Alex's Mobs 的本地 maven 入口（jar 放在 mcmodsrepo，不对外分发）
+    maven {
+        name = 'LocalMaven'
+        url = uri("${projectDir}/mcmodsrepo")
+    }
+    // 阿里云镜像放在前面，国内拉依赖快很多
+    maven {
+        url = "https://maven.aliyun.com/repository/public"
+    }
+    maven {
+        url = "https://maven.minecraftforge.net"
+    }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // 用 fg.deobf 拿到重映射后的 Alex's Mobs 类
+    compileOnly fg.deobf('com.github.alexthe666:alexsmobs:1.22.9')
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    // 统一按 UTF-8 读写，避免中文描述在 Windows 下乱码
+    filteringCharset = 'UTF-8'
+    var replaceProperties = [
+            minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
+            forge_version: forge_version, forge_version_range: forge_version_range,
+            loader_version_range: loader_version_range,
+            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+            mod_authors: mod_authors, mod_description: mod_description,
+    ]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title'     : mod_id,
+                'Specification-Vendor'    : mod_authors,
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Vendor'   : mod_authors,
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                // Mixin 配置清单：缺这个会在启动时直接报错
+                'MixinConfigs'             : "${mod_id}.mixins.json"
+        ])
+    }
+    finalizedBy 'reobfJar'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // 与女仆挖矿保持一致：弃用与未检查用法都当警告报出来，不让它们悄悄堆积
+    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
+}
