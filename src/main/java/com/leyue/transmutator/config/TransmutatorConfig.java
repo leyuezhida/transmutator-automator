@@ -25,6 +25,7 @@ public final class TransmutatorConfig {
 
     public static final ForgeConfigSpec SPEC;
 
+
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
 
@@ -86,17 +87,33 @@ public final class TransmutatorConfig {
 
         b.pop();
 
+        // ==================== 日志 ====================
+        b.comment("日志：长时间刷取时避免刷屏").push("diag");
+
+        LOG_EVERY_TRANSMUTE = b
+                .comment("true = 每次孖变都记一行；",
+                        "false = 每 20 次记一条（推荐，排查问题时再临时打开）")
+                .define("logEveryTransmute", false);
+
+        b.pop();
+
         SPEC = b.build();
     }
 
     public static final ForgeConfigSpec.BooleanValue ENABLED;
     public static final ForgeConfigSpec.IntValue INTERVAL_TICKS;
     public static final ForgeConfigSpec.BooleanValue STOP_ON_LOW_EXP;
+    public static final ForgeConfigSpec.BooleanValue LOG_EVERY_TRANSMUTE;
     public static final ForgeConfigSpec.IntValue TARGET_COUNT;
     public static final ForgeConfigSpec.BooleanValue REQUIRE_ALL_THREE;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> MARKER_ITEMS;
     public static final ForgeConfigSpec.IntValue WEIGHT_GAIN_COUNT;
     public static final ForgeConfigSpec.IntValue REROLL_COUNT;
+
+    /** 是否每次嬖变都记日志。 */
+    public static boolean logEveryTransmute() {
+        return LOG_EVERY_TRANSMUTE.get();
+    }
 
     private TransmutatorConfig() {
     }

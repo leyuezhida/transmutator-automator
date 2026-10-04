@@ -279,8 +279,9 @@ public class TransmutatorPanel {
     private static void drawStatus(GuiGraphics g, int panelX, int panelY) {
         var mc = net.minecraft.client.Minecraft.getInstance();
         String reason = TransmutatorLoop.stopReason();
-        String text = TransmutatorLoop.collected() + "/" + TransmutatorLoop.targetTotal()
-                + (reason == null ? "" : " " + reason);
+        String text = Component.translatable("gui.transmutator_automator.transmuted",
+                        TransmutatorLoop.transmuted()).getString()
+                + (reason == null ? "" : "　" + reason);
         g.drawString(mc.font, text, panelX + 6, panelY, 0x9A9A9A, false);
     }
 
@@ -473,7 +474,6 @@ public class TransmutatorPanel {
     private static void applyCount(int raw) {
         int next = Math.max(1, Math.min(MAX_COUNT, raw));
         TransmutatorConfig.TARGET_COUNT.set(next);
-        TransmutatorLoop.setTargetTotal(next);
         save();
     }
 

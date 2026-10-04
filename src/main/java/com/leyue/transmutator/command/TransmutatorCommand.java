@@ -145,8 +145,7 @@ public final class TransmutatorCommand {
         boolean on = TransmutatorConfig.ENABLED.get();
         source.sendSuccess(() -> Component.translatable("commands.ta.status.line1",
                 on ? "§a开" : "§c关",
-                TransmutatorLoop.collected(),
-                TransmutatorLoop.targetTotal()), false);
+                TransmutatorLoop.transmuted()), false);
         String reason = TransmutatorLoop.stopReason();
         if (reason != null) {
             source.sendSuccess(() -> Component.literal("停止原因：" + reason)
@@ -158,7 +157,6 @@ public final class TransmutatorCommand {
     private static int setCount(CommandSourceStack source, int value) {
         TransmutatorConfig.TARGET_COUNT.set(value);
         TransmutatorConfig.SPEC.save();
-        TransmutatorLoop.setTargetTotal(value);
         source.sendSuccess(() -> Component.translatable("commands.ta.count_set", value), true);
         return 1;
     }

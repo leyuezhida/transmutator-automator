@@ -1,8 +1,10 @@
 package com.leyue.transmutator.core;
 
+import com.github.alexthe666.alexsmobs.inventory.MenuTransmutationTable;
 import com.leyue.transmutator.config.TransmutatorConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -11,21 +13,25 @@ import java.util.Set;
 /**
  * 自动嬗变主循环。
  * <p>
- * <b>它在客户端主线程上跑</b>：Mixin 截获网络包时可能还在网络线程，
- * 而发嬗变包、发提示都必须在主线程，否则会出现时序问题。
+ * <b>它做什么</b>（2026-10-05 明确的需求）：
+ * 打开嬗变台后<b>一直点</b>，把槽位里的物品反复嬗变，
+ * <b>直到三个候选里出现标记物品为止</b> —— 出现就停，不去点它。
  * <p>
- * <b>每一轮做什么</b>：
- * <ol>
- *   <li>确认总开关打开、GUI 已打开、且确实有候选；</li>
- *   <li>检查经验：不足 3 级就停（否则服务端会反复拒绝，玩家被卡在界面里）；</li>
- *   <li>在三个候选里找标记物品；</li>
- *   <li>找到就发嬗变包，并累计已刷数量；</li>
- *   <li>没找到就什么都不做，等下一次候选刷新（服务端发新包后版本号自增）。</li>
- * </ol>
+ * <b>为什么不是"只点目标"</b>（这是设计的核心）：
+ * 嬗变台的权重是累积的。按 wiki 公式，
+ * <b>换出物品减少权重 = log₁₀(数量)⁴</b>，而 log 增长极快：
+ * 数量 1 时减 0，10 时减 4，100 时减 8 —— 数量越大权重掉得越狠。
+ * 只点目标意味着"其他物品被换出的量"不受控，权重会被持续压低，
+ * 目标越来越难出现，反而刷得更慢。
  * <p>
- * <b>为什么"没找到就等"是对的</b>：嬗变台每次只能刷一次才换候选，
- * 客户端无法要求"重掷一次"。所以想拿目标物品，只能等它自然出现在候选里
- * ——这也是嬗变台规则的一部分（权重由服务端维护）。
+ * <b>为什么避开"数量会变多"的选项</b>：
+ * 嬗变的数量换算在服务端做，{@code 新数量 = floor(原数量 × 新堆叠上限 / 原堆叠上限)}。
+ * 雪球上限 16、木棍上限 64，所以 1 个雪球可能嬗变成 4 个木棍 ——
+ * 每点一次物品就变多，被换出物品的权重按 log₁₀(N)⁴ 疯涨，其他物品权重被迅速压低。
+ * 所以策略是：<b>优先选堆叠上限不高于当前物品的候选</b>，数量不膨胀、权重扰动最小。
+ * <p>
+ * <b>线程</b>：Mixin 截获网络包时可能还在网络线程，
+ * 而发嬗变包、发提示都必须在主线程，否则会有时序问题。
  */
 public final class TransmutatorLoop {
 
@@ -33,16 +39,16 @@ public final class TransmutatorLoop {
     private static final int EXP_PER_TRANSMUTE = 3;
 
     private static Set<Item> targets = Set.of();
-    /** 目标物品总共需要刷到的数量。 */
-    private static int targetTotal;
-    /** 已经刷到的目标物品数量。 */
-    private static int collected;
+    /** 已完成的嬗变次数。 */
+    private static int transmuted;
     /** 已处理过的候选批次版本，避免对同一批候选重复发包。 */
     private static int handledVersion = -1;
     /** 剩余冷却 tick。 */
     private static int cooldown;
-    /** 停止原因，用于给玩家提示；null 表示仍在运行。 */
+    /** 停止原因；null 表示仍在运行。 */
     private static String stopReason;
+    /** 是否已经因为"看到目标"而停下过，避免每帧重复记录。 */
+    private static boolean reportedFound;
 
     private TransmutatorLoop() {
     }
@@ -50,19 +56,15 @@ public final class TransmutatorLoop {
     /** 配置变化时由调用方重新解析标记物品。 */
     public static void reloadTargets() {
         targets = MarkerMatcher.parse(TransmutatorConfig.markerList());
-        targetTotal = TransmutatorConfig.TARGET_COUNT.get();
-        if (collected >= targetTotal) {
-            collected = targetTotal;
-            stopReason = "目标数量已达成";
-        }
     }
 
     /** 打开嬗变台时重置状态。 */
     public static void onScreenOpened() {
-        collected = 0;
+        transmuted = 0;
         handledVersion = -1;
         cooldown = 0;
         stopReason = null;
+        reportedFound = false;
         reloadTargets();
     }
 
@@ -72,14 +74,14 @@ public final class TransmutatorLoop {
         CandidateSnapshot.clear();
     }
 
-    /** 当前是否正在自动嬗变。 */
+    /** 当前是否仍在自动嬗变。 */
     public static boolean isRunning() {
         return stopReason == null;
     }
 
-    /** 已刷到的目标物品数量。 */
-    public static int collected() {
-        return collected;
+    /** 已完成的嬗变次数。 */
+    public static int transmuted() {
+        return transmuted;
     }
 
     /** 停止原因；仍在运行时为 null。 */
@@ -90,7 +92,7 @@ public final class TransmutatorLoop {
     /**
      * 每客户端 tick 调用一次。
      *
-     * @return 本轮是否发出了嬗变请求（供调用方决定要不要播放音效等）
+     * @return 本轮是否发出了嬗变请求
      */
     public static boolean tick() {
         if (!isRunning() || !TransmutatorConfig.ENABLED.get()) {
@@ -101,86 +103,148 @@ public final class TransmutatorLoop {
         }
         int version = CandidateSnapshot.version();
         if (version == handledVersion) {
-            // 这一批候选已经判断过了，等服务端发下一批
-            return false;
+            return false; // 这批候选已判断过，等服务端发下一批
         }
-
         if (cooldown > 0) {
             cooldown--;
             return false;
         }
 
-        // 经验不足必须停：服务端会拒绝请求，玩家被卡在 GUI 里出不来。
-        // 这一段照旧强制生效，配置项只影响"是否额外提示"——关掉它并不会让
-        // 经验不足时继续发包，因为那样只是徒劳地刷日志。
+        // 经验不足必须停：服务端会拒绝请求，玩家被卡在界面里出不来
         Player player = Minecraft.getInstance().player;
         if (player != null && player.experienceLevel < EXP_PER_TRANSMUTE) {
-            if (TransmutatorConfig.STOP_ON_LOW_EXP.get() && stopReason == null) {
+            if (stopReason == null) {
                 stopReason = "经验不足（需要 " + EXP_PER_TRANSMUTE + " 级）";
-                TransmutatorLog.info("经验不足，自动嬗变已停止：当前 {} 级",
+                TransmutatorLog.info("经验不足，自动孖变已停止：当前 {} 级",
                         player.experienceLevel);
             }
             return false;
         }
 
-        int choice = pickTarget();
-        handledVersion = version;
-
-        if (choice < 0) {
-            // 本批没有目标物品，等下一次
+        // 1) 目标出现 → 停手。这才是玩家的目的，不能把目标点掉
+        int marked = findMarked();
+        if (marked >= 0) {
+            handledVersion = version;
+            if (!reportedFound) {
+                reportedFound = true;
+                String desc = ItemNamer.describe(CandidateSnapshot.get(marked));
+                stopReason = "已出现目标物品：" + desc;
+                TransmutatorLog.info("第 {} 个候选是目标物品（{}），停止嬗变。此前共 {} 次",
+                        marked + 1, desc, transmuted);
+            }
             return false;
+        }
+
+        // 2) 没目标 → 继续嬗变，优先选不会让数量变多的
+        int choice = pickSafe();
+        handledVersion = version;
+        if (choice < 0) {
+            return false; // 三个候选都空
         }
 
         ItemStack picked = CandidateSnapshot.get(choice);
         TransmutatorNetwork.sendTransmute(choice);
-        collected++;
+        transmuted++;
         cooldown = TransmutatorConfig.INTERVAL_TICKS.get();
-
-        TransmutatorLog.info("已选第 {} 个候选：{}（{}/{}）",
-                choice + 1, ItemNamer.describe(picked), collected, targetTotal);
-        if (collected >= targetTotal) {
-            stopReason = "已刷够目标数量";
+        // 每 20 次打一条，否则会刷屏
+        if (TransmutatorConfig.logEveryTransmute() || transmuted % 20 == 0) {
+            TransmutatorLog.info("嬗变第 {} 次：选第 {} 个候选 {}",
+                    transmuted, choice + 1, ItemNamer.describe(picked));
         }
         return true;
     }
 
     /**
-     * 在三个候选里挑一个目标物品。
+     * 找出第一个标记物品的候选。
      *
-     * @return 候选下标（0 基）；没找到时返回 -1
+     * @return 下标；没有则 -1
      */
-    private static int pickTarget() {
-        boolean needAll = TransmutatorConfig.REQUIRE_ALL_THREE.get();
-        int found = -1;
-        boolean allMarked = true;
-
+    private static int findMarked() {
+        if (targets.isEmpty()) {
+            return -1;
+        }
         for (int i = 0; i < 3; i++) {
             ItemStack stack = CandidateSnapshot.get(i);
-            boolean marked = !stack.isEmpty() && MarkerMatcher.isMarked(stack, targets);
-            if (marked) {
-                if (found < 0) {
-                    found = i;
-                }
-            } else {
-                allMarked = false;
+            if (!stack.isEmpty() && MarkerMatcher.isMarked(stack, targets)) {
+                return i;
             }
         }
-
-        if (needAll) {
-            return allMarked ? found : -1;
-        }
-        return found;
+        return -1;
     }
 
-    /** 供命令用：手动改目标数量时同步内部计数。 */
-    public static void setTargetTotal(int total) {
-        targetTotal = Math.max(1, total);
-        if (collected >= targetTotal) {
-            stopReason = "目标数量已达成";
+    /**
+     * 在三个候选里挑一个"点了不会让数量变多"的。
+     * <p>
+     * 实测（2026-10-05）：雪球上限 16 → 木棍上限 64，嬗变后 1 个变 4 个。
+     * 数量膨胀会让被换出物品的权重按 log₁₀(N)⁴ 疯涨，把其他物品压得太低，
+     * 目标反而更难刷出来。所以优先挑堆叠上限不高于当前物品的。
+     * <p>
+     * 三个都不满足时退而求其次点第一个 —— 宁可数量涨一点，
+     * 也别让循环卡着不动（卡着不动等于完全刷不到东西）。
+     *
+     * @return 候选下标；全空时 -1
+     */
+    private static int pickSafe() {
+        int fallback = -1;
+        for (int i = 0; i < 3; i++) {
+            ItemStack stack = CandidateSnapshot.get(i);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            if (fallback < 0) {
+                fallback = i;
+            }
+            if (!wouldGrowCount(stack)) {
+                return i;
+            }
         }
+        return fallback;
     }
 
-    public static int targetTotal() {
-        return targetTotal;
+    /**
+     * 嬗变成这个候选后，槽位里的数量会不会变多。
+     * <p>
+     * 服务端换算：{@code 新数量 = floor(原数量 / (原上限 / 新上限))}，
+     * 等价于 {@code 原数量 × 新上限 / 原上限} —— 新上限更高时结果更大。
+     * <p>
+     * <b>为什么比堆叠上限而不是比物品大小</b>：决定数量的是"这一组还能装多少个"，
+     * 模组物品的堆叠上限常被改写（有的模组给工具设成 1），
+     * 直接读 {@link ItemStack#getMaxStackSize()} 才能和服务端算出同一个结果。
+     */
+    private static boolean wouldGrowCount(ItemStack candidate) {
+        ItemStack current = currentSlotStack();
+        if (current.isEmpty() || !current.isStackable() || !candidate.isStackable()) {
+            return false;
+        }
+        int currentMax = current.getMaxStackSize();
+        int candidateMax = candidate.getMaxStackSize();
+        if (currentMax <= 0 || candidateMax <= 0) {
+            return false;
+        }
+        return candidateMax > currentMax;
+    }
+
+    /**
+     * 当前嬗变台输入槽里的物品。
+     * <p>
+     * <b>怎么可靠找到那个槽</b>：菜单的 {@code slots} 里前几个是容器自己的槽，
+     * 后面才是玩家背包。判据是 {@link Slot#container} —— 输入槽属于孖变台的容器，
+     * 玩家背包槽的 container 是玩家自己的 Inventory。
+     * <p>
+     * <b>为什么不按下标硬编码</b>：布局由 Alex's Mobs 决定，
+     * 猜"第 0 个是输入槽"在对方改布局时会静默读错，
+     * 而读错会让 {@link #wouldGrowCount} 判断失效，又回到权重被压的老问题。
+     */
+    private static ItemStack currentSlotStack() {
+        var player = Minecraft.getInstance().player;
+        if (player == null || !(player.containerMenu instanceof MenuTransmutationTable menu)) {
+            return ItemStack.EMPTY;
+        }
+        for (Slot slot : menu.slots) {
+            if (slot.container != player.getInventory()) {
+                return slot.getItem();
+            }
+        }
+        return ItemStack.EMPTY;
     }
 }
