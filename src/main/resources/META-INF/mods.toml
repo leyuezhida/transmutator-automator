@@ -5,14 +5,16 @@ license="${mod_license}"
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"
-# 中文模组名。值来自 gradle/mod_text.properties（ASCII 转义，规避 GBK 读 properties 的乱码）
+# Display name comes from gradle/mod_text.properties: pure ASCII with
+# \uXXXX escapes, because Groovy reads .properties with the platform
+# encoding (GBK on this machine) and would mangle Chinese written here.
 displayName="${mod_display_name}"
-# 模组列表图标（128x128，带「大变」二字）
+# Mod list icon, 128x128
 logoFile="logo.png"
 authors="${mod_authors}"
 description='''${mod_summary}'''
 
-# 纯客户端模组：专用服务器不能装
+# Client-side only: must not be installed on a dedicated server.
 displayTest="IGNORE_ALL_VERSION"
 
 [[dependencies.${mod_id}]]
@@ -29,7 +31,7 @@ displayTest="IGNORE_ALL_VERSION"
     ordering="NONE"
     side="CLIENT"
 
-# 嬗变台由 Alex's Mobs 提供
+# The transmutation table is provided by Alex's Mobs.
 [[dependencies.${mod_id}]]
     modId="alexsmobs"
     mandatory=true
