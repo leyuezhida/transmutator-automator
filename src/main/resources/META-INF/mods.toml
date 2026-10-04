@@ -5,9 +5,12 @@ license="${mod_license}"
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"
-displayName="${mod_name}"
+# 中文模组名。值来自 gradle/mod_text.properties（ASCII 转义，规避 GBK 读 properties 的乱码）
+displayName="${mod_display_name}"
+# 模组列表图标（128x128，带「大变」二字）
+logoFile="logo.png"
 authors="${mod_authors}"
-description='''${mod_description}'''
+description='''${mod_summary}'''
 
 # 纯客户端模组：专用服务器不能装
 displayTest="IGNORE_ALL_VERSION"

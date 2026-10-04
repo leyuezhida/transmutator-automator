@@ -121,14 +121,31 @@ dependencies {
 }
 
 tasks.named('processResources', ProcessResources).configure {
-    // 统一按 UTF-8 读写，避免中文描述在 Windows 下乱码
+    // 统一按 UTF-8 读写
     filteringCharset = 'UTF-8'
+    // 写出也必须是 UTF-8：filteringCharset 只管读取，写出用 JVM 默认编码（本机 GBK）
+    copySpec {
+        filteringCharset = 'UTF-8'
+        eachFile { it.charset = 'UTF-8' }
+    }
+
+    // 中文名称与描述从 gradle/mod_text.properties 读。
+    // 那个文件是纯 ASCII，中文以 \uXXXX 转义 —— Groovy 读 .properties 时用
+    // JVM 默认编码（GBK），直接写中文会被读成乱码，再写进 mods.toml 就成了
+    // 双重编码的乱码，游戏里显示成 "å¬åå°ï¼å¤§"。
+    // properties 规范保证 \uXXXX 与平台编码无关。
+    def modText = new Properties()
+    file('gradle/mod_text.properties').withInputStream { modText.load(it) }
+
     var replaceProperties = [
             minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
             forge_version: forge_version, forge_version_range: forge_version_range,
             loader_version_range: loader_version_range,
-            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
-            mod_authors: mod_authors, mod_description: mod_description,
+            mod_id: mod_id, mod_license: mod_license, mod_version: mod_version,
+            mod_authors: mod_authors,
+            // 中文名/描述走 ASCII 转义文件
+            mod_display_name: modText.getProperty('mod_display_name'),
+            mod_summary: modText.getProperty('mod_summary_cn'),
     ]
     inputs.properties replaceProperties
     filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
