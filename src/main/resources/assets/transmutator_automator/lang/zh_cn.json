@@ -24,5 +24,6 @@
   "gui.transmutator_automator.search": "搜索",
   "gui.transmutator_automator.search_hint": "输入物品名，支持中文与英文",
   "gui.transmutator_automator.selector_inventory": "你的背包",
-  "gui.transmutator_automator.transmuted": "已嬗变 %s 次"
+  "gui.transmutator_automator.transmuted": "已嬗变 %s 次",
+  "gui.transmutator_automator.paused": "已暂停（经验不足）"
 }

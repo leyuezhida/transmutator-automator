@@ -24,5 +24,6 @@
   "gui.transmutator_automator.search": "Search",
   "gui.transmutator_automator.search_hint": "Type a name, Chinese or English",
   "gui.transmutator_automator.selector_inventory": "Your inventory",
-  "gui.transmutator_automator.transmuted": "Transmuted %s times"
+  "gui.transmutator_automator.transmuted": "Transmuted %s times",
+  "gui.transmutator_automator.paused": "Paused (not enough XP)"
 }

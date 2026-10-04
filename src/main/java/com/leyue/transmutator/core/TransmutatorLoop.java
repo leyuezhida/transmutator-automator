@@ -49,6 +49,8 @@ public final class TransmutatorLoop {
     private static String stopReason;
     /** 是否已经因为"看到目标"而停下过，避免每帧重复记录。 */
     private static boolean reportedFound;
+    /** 因经验不足而暂停（不同于停止：经验够了会自动恢复）。 */
+    private static boolean paused;
 
     private TransmutatorLoop() {
     }
@@ -65,6 +67,7 @@ public final class TransmutatorLoop {
         cooldown = 0;
         stopReason = null;
         reportedFound = false;
+        paused = false;
         reloadTargets();
     }
 
@@ -89,6 +92,11 @@ public final class TransmutatorLoop {
         return stopReason;
     }
 
+    /** 当前是否因经验不足而暂停。 */
+    public static boolean isPaused() {
+        return paused;
+    }
+
     /**
      * 每客户端 tick 调用一次。
      *
@@ -97,6 +105,30 @@ public final class TransmutatorLoop {
     public static boolean tick() {
         if (!isRunning() || !TransmutatorConfig.ENABLED.get()) {
             return false;
+        }
+
+        // 经验检查放最前面（2026-10-05）：必须早于冷却与候选检查。
+        // 放后面的话，玩家在冷却期间掉经验会"感觉不到暂停"，
+        // 而冷却期间本来就不该继续消耗经验。
+        // 经验不足 → 暂停，不是永久停止：经验会自然回复、也能用经验瓶补满，
+        // 等够了要能自动接着刷，一次掉级就废掉整个功能不合理。
+        //
+        // 刻意不设 stopReason —— 那个字段表示"真的该停"（界面关闭、看到目标物品），
+        // 会永久阻断循环。暂停只用 paused 标记。
+        Player player = Minecraft.getInstance().player;
+        if (player != null && player.experienceLevel < EXP_PER_TRANSMUTE) {
+            if (!paused) {
+                paused = true;
+                TransmutatorLog.info("经验不足（当前 {} 级，需要 {} 级），已暂停。",
+                        player.experienceLevel, EXP_PER_TRANSMUTE);
+                TransmutatorLog.info("经验够了会自动继续，不需要重新开关。");
+            }
+            return false;
+        }
+        if (paused) {
+            paused = false;
+            TransmutatorLog.info("经验已恢复（{} 级），继续。",
+                    player == null ? 0 : player.experienceLevel);
         }
         if (!CandidateSnapshot.hasCandidates()) {
             return false;
@@ -107,17 +139,6 @@ public final class TransmutatorLoop {
         }
         if (cooldown > 0) {
             cooldown--;
-            return false;
-        }
-
-        // 经验不足必须停：服务端会拒绝请求，玩家被卡在界面里出不来
-        Player player = Minecraft.getInstance().player;
-        if (player != null && player.experienceLevel < EXP_PER_TRANSMUTE) {
-            if (stopReason == null) {
-                stopReason = "经验不足（需要 " + EXP_PER_TRANSMUTE + " 级）";
-                TransmutatorLog.info("经验不足，自动孖变已停止：当前 {} 级",
-                        player.experienceLevel);
-            }
             return false;
         }
 

@@ -278,11 +278,20 @@ public class TransmutatorPanel {
 
     private static void drawStatus(GuiGraphics g, int panelX, int panelY) {
         var mc = net.minecraft.client.Minecraft.getInstance();
-        String reason = TransmutatorLoop.stopReason();
         String text = Component.translatable("gui.transmutator_automator.transmuted",
-                        TransmutatorLoop.transmuted()).getString()
-                + (reason == null ? "" : "　" + reason);
-        g.drawString(mc.font, text, panelX + 6, panelY, 0x9A9A9A, false);
+                TransmutatorLoop.transmuted()).getString();
+        String reason = TransmutatorLoop.stopReason();
+        if (TransmutatorLoop.isPaused()) {
+            // 暂停态要显眼：否则玩家看到"没反应"会以为功能坏了
+            text = Component.translatable("gui.transmutator_automator.paused").getString()
+                    + "　" + text;
+            g.drawString(mc.font, text, panelX, panelY, 0xE8A33D, false);
+            return;
+        }
+        if (reason != null) {
+            text = text + "　" + reason;
+        }
+        g.drawString(mc.font, text, panelX, panelY, 0x9A9A9A, false);
     }
 
     // ==================== 背包点选 ====================
