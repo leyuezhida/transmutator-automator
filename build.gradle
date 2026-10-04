@@ -26,6 +26,25 @@ minecraft {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
+
+            // ⚠️ 这两行是让 Alex's Mobs 能在 dev 环境加载的关键，删掉就会崩：
+            //
+            // 现象：Alex's Mobs 声明 Citadel 为强制依赖，加上 Citadel 后游戏启动即崩：
+            //   "Critical injection failure: @Inject annotation on citadel_registerData
+            //    could not find any targets matching 'Lnet/.../LivingEntity;m_8097_()V'"
+            //
+            // 根因：Citadel 的 jar 里带 citadel.refmap.json，里面的注入目标是
+            // **SRG 名**（m_8097_ 这样的官方映射）。而 fg.deobf 只重映射 class 文件，
+            // **不会转换 jar 内部的 refmap**（已实测：重映射后的 jar 里 refmap 仍是
+            // m_202423_ 这种 SRG 名）。dev 环境跑的是 Parchment 名，两边对不上，
+            // Mixin 找不到注入目标就报 Critical injection failure。
+            //
+            // 这两行让 Mixin 在运行时用 srg 文件把 refmap 里的名字重映射到当前命名空间，
+            // 从而解析成功。这正是 Forge 官方推荐的 dev 环境做法
+            // （TLM 依赖方也是这么配的）。
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', file('build/createSrgToMcp/output.srg').absolutePath
+
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -33,10 +52,11 @@ minecraft {
             }
         }
         client {
-            // Alex's Mobs 是 compileOnly 依赖，runClient 的运行类路径会包含
-            // compileClasspath（见 dependencies 块），所以开发环境里能直接打开孖变台，
-            // 不需要在这里再声明一次 —— mods{} 只接受 SourceSet，喂依赖会报
-            // "Could not find method source()"
+            // Alex's Mobs 通过 dependencies 里的 implementation 进入 runtimeClasspath，
+            // runClient 会自动带上它，**不需要**在这里再声明。
+            // （早前试过在 mods{} 里写 source fg.deobf(...)，ForgeGradle 会报
+            //   "Could not find method source() for arguments [DefaultExternalModuleDependency]"，
+            //  因为 mods{} 只接受 SourceSet，不接受外部依赖配置。）
         }
         // 纯客户端模组：server / gameTestServer / data 全部不需要
     }
@@ -61,8 +81,43 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    // 用 fg.deobf 拿到重映射后的 Alex's Mobs 类
-    compileOnly fg.deobf('com.github.alexthe666:alexsmobs:1.22.9')
+    // Alex's Mobs：编译期与运行期都要，所以用 implementation。
+    //
+    // 踩过两个坑，都与"开发环境只加载 Forge + 本模组"有关：
+    //
+    // 1) 最初写成 compileOnly —— 它只在编译期可见，dev 环境的运行类路径里没有它，
+    //    结果游戏能启动、mods 列表里却没有 Alex's Mobs，孖变台根本不存在，
+    //    而且**不报任何错**。
+    // 2) 试过在 runs.client.mods{} 里写 `source fg.deobf(...)` —— 报
+    //    "Could not find method source() for arguments [DefaultExternalModuleDependency]"，
+    //    因为 mods{} 只接受 SourceSet（本地源码），不接受外部依赖。
+    //    外部模组要进 dev 环境，正确做法就是在 dependencies 里声明。
+    //
+    // runClient 的类路径 = minecraftArtifacts + runtimeClasspathArtifacts
+    // （已用 javap 核实 MinecraftRunTask），implementation 会进后者。
+    implementation fg.deobf('com.github.alexthe666:alexsmobs:1.22.9')
+
+    // Citadel：Alex's Mobs 声明的**强制依赖**，不加它 runClient 会直接崩：
+    //   "Mod alexsmobs requires citadel 2.6.0 or above"
+    // 只有孖变台功能本身不依赖 Citadel，但 Alex's Mobs 在 mod 层面硬性要求它，
+    // 少了就整个模组加载失败。
+    //
+    // ⚠️ 必须用**未经重映射的原始 jar**（libs/ + flatDir），
+    //    不能写 fg.deobf() 或 implementation + maven 坐标。
+    //
+    // 原因：Citadel 自带 citadel.refmap.json（21 KB），那是在**官方 Mojang 映射**下
+    // 生成的。fg.deobf 会把 jar 重新映射到 Parchment 命名空间，于是它内部的
+    // @Inject 目标名对不上，Citadel 的 LivingEntityMixin 在 PREINJECT 阶段就崩：
+    //   "Critical injection failure: @Inject annotation on citadel_registerData
+    //    could not find any targets matching 'Lnet/.../LivingEntity;m_8097_()V'"
+    //
+    // 我们不引用 Citadel 的任何类，只是让它在 dev 环境里能被加载，
+    // 所以直接用原 jar 即可 —— 它靠自带 refmap 适配官方映射。
+    implementation fg.deobf('com.github.alexthe666:citadel:2.6.1')
+
+    // Mixin 注解处理器：没有它 @Inject 的注入点不会校验，
+    // 写错方法名只会在游戏启动时报 "InvalidInjectionException"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
 tasks.named('processResources', ProcessResources).configure {

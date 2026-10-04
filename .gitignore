@@ -23,9 +23,11 @@ run-data
 runs
 *.launch
 
-# 本地 maven 仓库：里面是 Alex's Mobs 的 jar，不对外分发
-# （该 jar 有自己的授权，改版本管理器时代替它）
+# 别人的 jar，不入库
+# mcmodsrepo：本地 maven 入口（Alex's Mobs）
+# libs：原始 jar（Citadel，它的 refmap 只能配原 jar 才不崩）
 mcmodsrepo/
+libs/
 
 # WorkBuddy local data
 .workbuddy

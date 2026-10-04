@@ -31,6 +31,12 @@ public final class TransmutatorCommand {
     private TransmutatorCommand() {
     }
 
+    /** 由主类注册到 MinecraftForge.EVENT_BUS（不是 modBus）。 */
+    public static void onRegisterCommands(
+            net.minecraftforge.event.RegisterCommandsEvent event) {
+        register(event.getDispatcher());
+    }
+
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("ta")
                 .executes(ctx -> usage(ctx.getSource()))

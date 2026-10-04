@@ -35,7 +35,12 @@ public final class TransmutatorAutomator {
         // 配置必须在客户端侧注册
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, TransmutatorConfig.SPEC);
         modBus.addListener(this::onClientSetup);
-        modBus.addListener(this::onRegisterCommands);
+
+        // ⚠️ RegisterCommandsEvent 走**普通事件总线**（MinecraftForge.EVENT_BUS），
+        // 不是 modBus。它不是 IModBusEvent 的子类，注册到 modBus 上会抛：
+        //   "Listener for event class RegisterCommandsEvent takes an argument that is
+        //    not a subtype of the base type interface IModBusEvent"
+        MinecraftForge.EVENT_BUS.addListener(TransmutatorCommand::onRegisterCommands);
 
         MinecraftForge.EVENT_BUS.register(this);
         TransmutatorLog.info("孖变台自动助手已加载（纯客户端）");
