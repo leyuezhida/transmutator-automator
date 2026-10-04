@@ -54,10 +54,6 @@ public final class TransmutatorConfig {
         // ==================== 停止条件 ====================
         b.comment("停止条件").push("target");
 
-        TARGET_COUNT = b
-                .comment("刷到多少个目标物品后停止。")
-                .defineInRange("targetCount", 64, 1, 2304);
-
         REQUIRE_ALL_THREE = b
                 .comment("true  = 三个候选里出现任一目标物品就点它（推荐）",
                         "false = 只有三个候选全为目标物品时才点（更保守）",
@@ -104,7 +100,6 @@ public final class TransmutatorConfig {
     public static final ForgeConfigSpec.IntValue INTERVAL_TICKS;
     public static final ForgeConfigSpec.BooleanValue STOP_ON_LOW_EXP;
     public static final ForgeConfigSpec.BooleanValue LOG_EVERY_TRANSMUTE;
-    public static final ForgeConfigSpec.IntValue TARGET_COUNT;
     public static final ForgeConfigSpec.BooleanValue REQUIRE_ALL_THREE;
     public static final ForgeConfigSpec.ConfigValue<List<? extends String>> MARKER_ITEMS;
     public static final ForgeConfigSpec.IntValue WEIGHT_GAIN_COUNT;

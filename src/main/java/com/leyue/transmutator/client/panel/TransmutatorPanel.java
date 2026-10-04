@@ -52,8 +52,8 @@ public class TransmutatorPanel {
     private static final int BTN_H = 18;
     /** 元素之间的竖直间距。 */
     private static final int GAP = 6;
-    /** 目标数量上限：36 组 × 64 个，超过就没意义了。 */
-    private static final int MAX_COUNT = 2304;
+    /** 嬗变间隔上限（tick）。20 tick = 1 秒，再慢就没什么用了。 */
+    private static final int MAX_INTERVAL = 20;
     /**
      * 完整面板高度。
      * <p>
@@ -129,14 +129,17 @@ public class TransmutatorPanel {
             return;
         }
 
-        // ---- 目标数量：可直接点数字框输入 ----
-        drawButton(g, panelX + PAD, y, 18, Component.literal("-"), 0xFF4A4A4A, () -> {
-            applyCount(TransmutatorConfig.TARGET_COUNT.get() - 1);
-        });
-        drawCountBox(g, mc, panelX + PAD + 20, y, 44, mouseX, mouseY);
-        drawButton(g, panelX + PAD + 66, y, 18, Component.literal("+"), 0xFF4A4A4A, () -> {
-            applyCount(TransmutatorConfig.TARGET_COUNT.get() + 1);
-        });
+        // ---- 嬗变间隔 ----
+        // 原来这里是"刷到 N 个就停"的数量框，但停止条件已经改成
+        // "候选里出现目标物品"，那个设定不再有意义，删掉换成更有用的间隔调节。
+        g.drawString(mc.font, Component.translatable("gui.transmutator_automator.interval"),
+                panelX + PAD, y + 5, 0xA0A0A0, false);
+        drawButton(g, panelX + PAD + 34, y, 18, Component.literal("-"), 0xFF4A4A4A,
+                () -> applyInterval(TransmutatorConfig.INTERVAL_TICKS.get() - 1));
+        drawValue(g, panelX + PAD + 54, y, 24,
+                String.valueOf(TransmutatorConfig.INTERVAL_TICKS.get()));
+        drawButton(g, panelX + PAD + 80, y, 18, Component.literal("+"), 0xFF4A4A4A,
+                () -> applyInterval(TransmutatorConfig.INTERVAL_TICKS.get() + 1));
         y += BTN_H + GAP;
 
         // ---- 模式 ----
@@ -365,125 +368,25 @@ public class TransmutatorPanel {
     }
 
     /**
-     * 目标数量框：显示当前值，<b>点击即可直接输入</b>。
+     * 应用新的嬗变间隔。
      * <p>
-     * 早先只能点加减号，从 64 调到 128 要点 64 次 —— 明显不合理。
-     * 现在点一下就变成输入框，回车或点别处生效。
+     * 范围 1..20 tick（0.05~1 秒）。太小可能来不及等服务端结算，
+     * 太大则刷得太慢 —— 4 tick 是实测比较合适的默认值。
      */
-    private static void drawCountBox(GuiGraphics g, net.minecraft.client.Minecraft mc,
-                                     int x, int y, int w, int mouseX, int mouseY) {
-        int th = mc.font.lineHeight;
-        boolean editing = countBox != null && countBox.isFocused();
-        g.fill(x, y, x + w, y + BTN_H, editing ? 0xFFFFFFFF : 0xFF303030);
-        outlineBox(g, x, y, w, BTN_H, editing ? 0xFF3B6D11 : 0xFF5A5A5A);
-        String text = editing
-                ? countBox.getValue()
-                : String.valueOf(TransmutatorConfig.TARGET_COUNT.get());
-        g.drawString(mc.font, text,
-                x + (w - mc.font.width(text)) / 2, y + (BTN_H - th) / 2,
-                editing ? 0x173404 : 0xDDDDDD, false);
-        // 提示可以输入
-        if (!editing && hover(mouseX, mouseY, x, y, w, BTN_H)) {
-            g.renderTooltip(mc.font,
-                    Component.translatable("gui.transmutator_automator.count_hint"),
-                    mouseX, mouseY);
-        }
-        if (editing) {
-            // 真正的输入框画在同一位置
-            countBox.setX(x);
-            countBox.setY(y);
-            countBox.setWidth(w);
-            countBox.render(g, mouseX, mouseY, 0);
-        } else {
-            // 未编辑时登记点击区：点了就进入编辑
-            final int bx = x;
-            final int by = y;
-            final int bw = w;
-            HOTSPOTS.add(new Hotspot(x, y, w, BTN_H, () -> beginCountEdit(bx, by, bw)));
-        }
-    }
-
-    /** 数字输入框（懒创建，关闭时丢弃）。 */
-    private static net.minecraft.client.gui.components.EditBox countBox;
-
-    /**
-     * 打开数字输入。
-     * <p>
-     * <b>不调 save()</b> —— 与其他按钮不同，这里只打开输入框；
-     * 真正生效是在 {@link #onKey} 里按回车/点别处时才写。
-     */
-    public static void beginCountEdit(int x, int y, int w) {
-        var mc = net.minecraft.client.Minecraft.getInstance();
-        if (countBox == null) {
-            countBox = new net.minecraft.client.gui.components.EditBox(
-                    mc.font, x, y, w, BTN_H,
-                    Component.translatable("gui.transmutator_automator.count"));
-            // 只收数字与退格，防止输入无效字符
-            countBox.setFilter(str -> str.chars().allMatch(Character::isDigit));
-            countBox.setMaxLength(5);
-        }
-        countBox.setX(x);
-        countBox.setY(y);
-        countBox.setWidth(w);
-        countBox.setValue(String.valueOf(TransmutatorConfig.TARGET_COUNT.get()));
-        countBox.setFocused(true);
-        countEditing = true;
-    }
-
-    /** 数字框是否正在编辑。 */
-    private static boolean countEditing;
-
-    /**
-     * 提交数字输入。空串或非法输入时保持原值。
-     */
-    public static void commitCountEdit() {
-        if (countBox == null || !countEditing) {
-            return;
-        }
-        countEditing = false;
-        countBox.setFocused(false);
-        String text = countBox.getValue().trim();
-        if (text.isEmpty()) {
-            return;
-        }
-        try {
-            applyCount(Integer.parseInt(text));
-        } catch (NumberFormatException ignored) {
-            // 输入框已过滤数字，理论上到不了这里；真到了就保持原值
-        }
-    }
-
-    public static boolean isCountEditing() {
-        return countEditing;
-    }
-
-    /**
-     * 数字框的按键。
-     *
-     * @return true 表示按键已被消费
-     */
-    public static boolean onCountKey(int key, int scanCode, int modifiers) {
-        if (countBox == null || !countEditing) {
-            return false;
-        }
-        if (key == 257 || key == 258) { // ENTER / TAB：提交
-            commitCountEdit();
-            return true;
-        }
-        if (key == 256) { // ESC：放弃编辑
-            countEditing = false;
-            countBox.setFocused(false);
-            return true;
-        }
-        countBox.keyPressed(key, scanCode, modifiers);
-        return true;
-    }
-
-    /** 应用新的目标数量（夹到合法范围并落内存，磁盘由 flush 统一处理）。 */
-    private static void applyCount(int raw) {
-        int next = Math.max(1, Math.min(MAX_COUNT, raw));
-        TransmutatorConfig.TARGET_COUNT.set(next);
+    private static void applyInterval(int raw) {
+        int next = Math.max(1, Math.min(MAX_INTERVAL, raw));
+        TransmutatorConfig.INTERVAL_TICKS.set(next);
         save();
+    }
+
+    /** 只读的值框（不可编辑，居中显示）。 */
+    private static void drawValue(GuiGraphics g, int x, int y, int w, String text) {
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        int th = mc.font.lineHeight;
+        g.fill(x, y, x + w, y + BTN_H, 0xFF303030);
+        outlineBox(g, x, y, w, BTN_H, 0xFF5A5A5A);
+        g.drawString(mc.font, text, x + (w - mc.font.width(text)) / 2,
+                y + (BTN_H - th) / 2, 0xDDDDDD, false);
     }
 
     private static void outline(GuiGraphics g, int x, int y, int color) {
@@ -517,11 +420,6 @@ public class TransmutatorPanel {
 
     /** 关闭嬖变台界面时一并关掉选择器。 */
     public static void closeSelector() {
-        // 数字框里没提交的值就此作废，不写盘
-        countEditing = false;
-        if (countBox != null) {
-            countBox.setFocused(false);
-        }
         if (ItemSelector.isOpen()) {
             ItemSelector.close();
             ItemSelector.beginFrame();

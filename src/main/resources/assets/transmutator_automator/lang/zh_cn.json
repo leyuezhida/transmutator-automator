@@ -1,5 +1,5 @@
 {
-  "commands.ta.usage": "面板就在嬗变台界面左侧。指令：/ta mark <物品> | /ta unmark <物品> | /ta list | /ta clear | /ta status | /ta count <数量>",
+  "commands.ta.usage": "面板就在孖变台界面左侧。指令：/ta mark <物品> | /ta unmark <物品> | /ta list | /ta clear | /ta status | /ta interval <tick>",
   "commands.ta.unresolved": "无法识别「%s」。请用注册名（如 minecraft:diamond）或游戏内中文名（如 钻石）",
   "commands.ta.added": "已添加标记物品：%s",
   "commands.ta.already": "%s 已经在标记列表里了",
@@ -9,7 +9,6 @@
   "commands.ta.empty": "标记物品列表为空。用 /ta mark <物品> 添加想刷的物品。",
   "commands.ta.cleared": "已清空标记物品列表",
   "commands.ta.status.line1": "自动孖变：%s  已嬗变 %s 次",
-  "commands.ta.count_set": "目标数量已设为 %s",
   "gui.transmutator_automator.no_targets": "点背包物品设为目标",
   "gui.transmutator_automator.on": "自动嬗变：开",
   "gui.transmutator_automator.off": "自动嬗变：关",
@@ -18,12 +17,12 @@
   "gui.transmutator_automator.short_title": "自动嬗变",
   "gui.transmutator_automator.clear": "清空目标",
   "gui.transmutator_automator.add": "+ 添加",
-  "gui.transmutator_automator.count_hint": "点击可直接输入数量",
-  "gui.transmutator_automator.count": "数量",
   "gui.transmutator_automator.selector_title": "选择目标物品",
   "gui.transmutator_automator.search": "搜索",
   "gui.transmutator_automator.search_hint": "输入物品名，支持中文与英文",
   "gui.transmutator_automator.selector_inventory": "你的背包",
   "gui.transmutator_automator.transmuted": "已嬗变 %s 次",
-  "gui.transmutator_automator.paused": "已暂停（经验不足）"
+  "gui.transmutator_automator.paused": "已暂停（经验不足）",
+  "gui.transmutator_automator.interval": "间隔",
+  "commands.ta.interval_set": "嬗变间隔已设为 %s tick（1 tick = 0.05 秒）"
 }

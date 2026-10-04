@@ -55,10 +55,10 @@ public final class TransmutatorCommand {
                         .executes(ctx -> clear(ctx.getSource())))
                 .then(Commands.literal("status")
                         .executes(ctx -> status(ctx.getSource())))
-                .then(Commands.literal("count")
-                        .then(Commands.argument("value", IntegerArgumentType.integer(1))
-                                .executes(ctx -> setCount(ctx.getSource(),
-                                        IntegerArgumentType.getInteger(ctx, "value"))))));
+                .then(Commands.literal("interval")
+                        .then(Commands.argument("ticks", IntegerArgumentType.integer(1, 20))
+                                .executes(ctx -> setInterval(ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, "ticks"))))));
     }
 
     /**
@@ -154,10 +154,11 @@ public final class TransmutatorCommand {
         return 1;
     }
 
-    private static int setCount(CommandSourceStack source, int value) {
-        TransmutatorConfig.TARGET_COUNT.set(value);
+    /** 设置嬗变间隔（tick）。 */
+    private static int setInterval(CommandSourceStack source, int ticks) {
+        TransmutatorConfig.INTERVAL_TICKS.set(ticks);
         TransmutatorConfig.SPEC.save();
-        source.sendSuccess(() -> Component.translatable("commands.ta.count_set", value), true);
+        source.sendSuccess(() -> Component.translatable("commands.ta.interval_set", ticks), true);
         return 1;
     }
 }

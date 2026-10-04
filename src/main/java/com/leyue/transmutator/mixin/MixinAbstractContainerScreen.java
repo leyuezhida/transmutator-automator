@@ -82,18 +82,14 @@ public abstract class MixinAbstractContainerScreen {
             require = 0, cancellable = true)
     private void ta$onClick(double mouseX, double mouseY, int button,
                             CallbackInfoReturnable<Boolean> cir) {
-        // 0) 数字框正在编辑时，先把这次点击当作"点别处提交"
-        if (TransmutatorPanel.isCountEditing()) {
-            TransmutatorPanel.commitCountEdit();
-        }
-        // 1) 选择器开着时优先处理它：它铺在孖变台之上，不先处理会点到下面的孖变台
+        // 选择器开着时优先处理它：它铺在孖变台之上，不先处理会点到下面的孖变台
         if (ItemSelector.isOpen()) {
             if (ItemSelector.onClick(mouseX, mouseY, button)) {
                 cir.setReturnValue(true);
             }
             return;
         }
-        // 2) 面板自身
+        // 面板自身
         if (TransmutatorPanel.mouseClicked(mouseX, mouseY, button)) {
             cir.setReturnValue(true);
         }
@@ -110,12 +106,7 @@ public abstract class MixinAbstractContainerScreen {
             require = 0, cancellable = true)
     private void ta$onKey(int key, int scanCode, int modifiers,
                           CallbackInfoReturnable<Boolean> cir) {
-        // 0) 数字框编辑中：所有按键都先给它
-        if (TransmutatorPanel.onCountKey(key, scanCode, modifiers)) {
-            cir.setReturnValue(true);
-            return;
-        }
-        // 1) 选择器
+        // 选择器
         if (!ItemSelector.isOpen()) {
             return;
         }
