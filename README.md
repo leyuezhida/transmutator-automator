@@ -100,11 +100,10 @@ The panel previews the three live candidates and outlines a hit in green, so you
 | Minecraft | 1.20.1 |
 | Forge | 47.4.22+ |
 | Alex's Mobs | 1.22+ |
-| Touhou Little Maid | 1.5.3+ |
 
-**客户端与服务端都要装。** 本模组是纯客户端的，但 Alex's Mobs 与车万女仆本身需要两端都在。
+**客户端与服务端都要装。** 本模组是纯客户端的，但 Alex's Mobs 本身需要两端都在。
 
-**Install on both client and server.** This mod is client-only, but Alex's Mobs and Touhou Little Maid are required on both sides.
+**Install on both client and server.** This mod is client-only, but Alex's Mobs is required on both sides.
 
 ---
 
@@ -140,6 +139,6 @@ The panel previews the three live candidates and outlines a hit in green, so you
 
 - 开源协议：MIT
 - 模组图标基于 Alex's Mobs 的嬗变台渲染图制作
-- 感谢 [Alex's Mobs](https://modrinth.com/mod/alexsmobs) 与 [Touhou Little Maid](https://github.com/TartaricAcid/TouhouLittleMaid)
+- 感谢 [Alex's Mobs](https://modrinth.com/mod/alexsmobs) 及其作者
 
 Licensed under the MIT License. The icon is derived from Alex's Mobs' transmutation table render.
