@@ -69,7 +69,7 @@ public abstract class MixinTransmutationTableGui {
             com.leyue.transmutator.core.TransmutatorLog.info(
                     "面板已挂上嬗变台界面：gui=({},{}) 界面={}x{}", gx, gy, screen.width, screen.height);
         }
-        TransmutatorPanel.render(graphics, mc, screen.width, screen.height, gx, gy);
+        TransmutatorPanel.render(graphics, mc, screen.width, screen.height, gx, gy, mouseX, mouseY);
     }
 
     private static boolean announced;

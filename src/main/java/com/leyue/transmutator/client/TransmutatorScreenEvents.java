@@ -52,6 +52,7 @@ public final class TransmutatorScreenEvents {
             TransmutatorLoop.onScreenClosed();
             CandidateSnapshot.clear();
             // 关闭界面时才落盘：点击事件里同步写文件会导致卡死
+            TransmutatorPanel.closeSelector();
             TransmutatorPanel.flush();
         }
     }

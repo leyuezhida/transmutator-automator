@@ -16,5 +16,12 @@
   "gui.transmutator_automator.mode_all": "三个都目标才点",
   "gui.transmutator_automator.mode_any": "见到目标就点",
   "gui.transmutator_automator.short_title": "自动嬗变",
-  "gui.transmutator_automator.clear": "清空目标"
+  "gui.transmutator_automator.clear": "清空目标",
+  "gui.transmutator_automator.add": "+ 添加",
+  "gui.transmutator_automator.count_hint": "点击可直接输入数量",
+  "gui.transmutator_automator.count": "数量",
+  "gui.transmutator_automator.selector_title": "选择目标物品",
+  "gui.transmutator_automator.search": "搜索",
+  "gui.transmutator_automator.search_hint": "输入物品名，支持中文与英文",
+  "gui.transmutator_automator.selector_inventory": "你的背包"
 }

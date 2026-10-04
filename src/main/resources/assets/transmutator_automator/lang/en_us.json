@@ -16,5 +16,12 @@
   "gui.transmutator_automator.mode_all": "Only if all three match",
   "gui.transmutator_automator.mode_any": "Pick on any match",
   "gui.transmutator_automator.short_title": "Auto",
-  "gui.transmutator_automator.clear": "Clear targets"
+  "gui.transmutator_automator.clear": "Clear targets",
+  "gui.transmutator_automator.add": "+ Add",
+  "gui.transmutator_automator.count_hint": "Click to type a number",
+  "gui.transmutator_automator.count": "Count",
+  "gui.transmutator_automator.selector_title": "Choose a target item",
+  "gui.transmutator_automator.search": "Search",
+  "gui.transmutator_automator.search_hint": "Type a name, Chinese or English",
+  "gui.transmutator_automator.selector_inventory": "Your inventory"
 }
