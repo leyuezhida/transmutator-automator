@@ -172,6 +172,6 @@ tasks.named('jar', Jar).configure {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    // 与女仆挖矿保持一致：弃用与未检查用法都当警告报出来，不让它们悄悄堆积
+    // 弃用与未检查用法都当警告报出来，不让它们悄悄堆积
     options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
 }

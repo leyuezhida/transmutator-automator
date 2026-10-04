@@ -39,9 +39,8 @@ A **client-side** Forge mod (1.20.1) that automates the **Transmutation Table** 
 | Minecraft | 1.20.1 |
 | Forge | 47.4.22+ |
 | Alex's Mobs | 1.22+ |
-| Touhou Little Maid | 1.5.3+ |
 
-客户端与服务端均需安装（Alex's Mobs 与车万女仆本身要求两端都在）。
+客户端与服务端均需安装（Alex's Mobs 本身要求两端都在）。
 
 ### 使用
 
