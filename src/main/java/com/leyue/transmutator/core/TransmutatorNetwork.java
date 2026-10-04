@@ -30,7 +30,7 @@ public final class TransmutatorNetwork {
     public static void sendTransmute(int choice) {
         if (choice < 0 || choice > 2) {
             // 越界会在 Alex's Mobs 的按钮回调里直接 NPE，这里提前挡住
-            TransmutatorLog.warn("候选下标越界：{}，已忽略", choice);
+            TransmutatorLog.warnT("log.choice_out_of_range", choice);
             return;
         }
         var player = Minecraft.getInstance().player;

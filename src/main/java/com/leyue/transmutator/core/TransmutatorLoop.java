@@ -3,6 +3,7 @@ package com.leyue.transmutator.core;
 import com.github.alexthe666.alexsmobs.inventory.MenuTransmutationTable;
 import com.leyue.transmutator.config.TransmutatorConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
@@ -73,7 +74,7 @@ public final class TransmutatorLoop {
 
     /** 关闭界面时停止。 */
     public static void onScreenClosed() {
-        stopReason = "界面已关闭";
+        stopReason = I18n.get("gui.transmutator_automator.closed");
         CandidateSnapshot.clear();
     }
 
@@ -119,15 +120,15 @@ public final class TransmutatorLoop {
         if (player != null && player.experienceLevel < EXP_PER_TRANSMUTE) {
             if (!paused) {
                 paused = true;
-                TransmutatorLog.info("经验不足（当前 {} 级，需要 {} 级），已暂停。",
+                TransmutatorLog.infoT("log.exp_paused",
                         player.experienceLevel, EXP_PER_TRANSMUTE);
-                TransmutatorLog.info("经验够了会自动继续，不需要重新开关。");
+                TransmutatorLog.infoT("log.exp_resume_hint");
             }
             return false;
         }
         if (paused) {
             paused = false;
-            TransmutatorLog.info("经验已恢复（{} 级），继续。",
+            TransmutatorLog.infoT("log.exp_resumed",
                     player == null ? 0 : player.experienceLevel);
         }
         if (!CandidateSnapshot.hasCandidates()) {
@@ -149,8 +150,8 @@ public final class TransmutatorLoop {
             if (!reportedFound) {
                 reportedFound = true;
                 String desc = ItemNamer.describe(CandidateSnapshot.get(marked));
-                stopReason = "已出现目标物品：" + desc;
-                TransmutatorLog.info("第 {} 个候选是目标物品（{}），停止嬗变。此前共 {} 次",
+                stopReason = I18n.get("gui.transmutator_automator.found", desc);
+                TransmutatorLog.infoT("log.target_found",
                         marked + 1, desc, transmuted);
             }
             return false;
@@ -169,7 +170,7 @@ public final class TransmutatorLoop {
         cooldown = TransmutatorConfig.INTERVAL_TICKS.get();
         // 每 20 次打一条，否则会刷屏
         if (TransmutatorConfig.logEveryTransmute() || transmuted % 20 == 0) {
-            TransmutatorLog.info("嬗变第 {} 次：选第 {} 个候选 {}",
+            TransmutatorLog.infoT("log.transmuted",
                     transmuted, choice + 1, ItemNamer.describe(picked));
         }
         return true;

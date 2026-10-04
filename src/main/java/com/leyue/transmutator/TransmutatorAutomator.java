@@ -43,13 +43,13 @@ public final class TransmutatorAutomator {
         MinecraftForge.EVENT_BUS.addListener(TransmutatorCommand::onRegisterCommands);
 
         MinecraftForge.EVENT_BUS.register(this);
-        TransmutatorLog.info("嬗变台自动助手已加载（纯客户端）");
+        TransmutatorLog.infoT("log.loaded");
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             TransmutatorLoop.reloadTargets();
-            TransmutatorLog.info("已载入标记物品：{}",
+            TransmutatorLog.infoT("log.targets_loaded",
                     TransmutatorConfig.markerList());
         });
     }
