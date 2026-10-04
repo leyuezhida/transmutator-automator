@@ -37,12 +37,29 @@ public class TransmutatorPanel {
 
     /** 格子边长，与原版物品栏一致。 */
     private static final int SLOT = 18;
-    /** 面板宽度。 */
-    private static final int PANEL_W = 100;
-    /** 目标图标最多排几列。 */
-    private static final int COLS = 5;
+    /** 面板宽度：够放 8 列图标（8*19=152 太宽，5 列只 95 又太少，6 列折中）。 */
+    private static final int PANEL_W = 116;
+    /** 目标图标每行几个（受 PANEL_W 限制：6 个 * 19px = 114，正好放下）。 */
+    private static final int COLS = 6;
     /** 每行最多显示多少个目标（超出用 "+N" 概括）。 */
-    private static final int MAX_ROWS = 4;
+    private static final int MAX_ROWS = 3;
+    /** 底板左右内边距。 */
+    private static final int PAD = 6;
+    /** 底板上下内边距。 */
+    private static final int PAD_Y = 8;
+    /** 按钮高度。 */
+    private static final int BTN_H = 18;
+    /** 元素之间的竖直间距。 */
+    private static final int GAP = 6;
+    /**
+     * 完整面板高度。
+     * <p>
+     * <b>按最坏情况（{@link #MAX_ROWS} 行目标）算出来的</b>，不是按当前内容 ——
+     * 早先写死 152 时，1 个目标刚好、7 个就溢出 16px。加目标却看着面板变矮变歪。
+     * 公式：{@code PAD_Y + (BTN_H+GAP) + (MAX_ROWS*(SLOT+1) + BTN_H + GAP)
+     * + (BTN_H+GAP) + (BTN_H+GAP) + (SLOT+GAP) + 状态文字行}
+     */
+    private static final int PANEL_H = 194;
 
     /** 本帧的可点击区域。 */
     private static final List<Hotspot> HOTSPOTS = new ArrayList<>();
@@ -81,15 +98,15 @@ public class TransmutatorPanel {
         }
         int panelY = Math.max(4, guiTop);
         // 屏幕太矮就只画最上面那块（开关 + 目标），其余略去
-        boolean compact = panelY + 150 > screenHeight - 4;
+        boolean compact = panelY + PANEL_H > screenHeight - 4;
 
         drawPanel(g, panelX, panelY, compact);
 
-        int y = panelY + 12;
+        int y = panelY + PAD_Y;
 
         // ---- 开关 ----
         boolean enabled = TransmutatorConfig.ENABLED.get();
-        drawButton(g, panelX + 6, y, PANEL_W - 12,
+        drawButton(g, panelX + PAD, y, PANEL_W - PAD * 2,
                 Component.translatable(enabled
                         ? "gui.transmutator_automator.on"
                         : "gui.transmutator_automator.off"),
@@ -98,37 +115,36 @@ public class TransmutatorPanel {
                     TransmutatorConfig.ENABLED.set(!enabled);
                     save();
                 });
-        y += 26;
+        y += BTN_H + GAP;
 
-        // ---- 目标列表 ----
-        drawTargetList(g, mc, panelX, y);
-        y += (TARGETS.isEmpty() ? 20 : MAX_ROWS * (SLOT + 1) + 4);
+        // ---- 目标列表（图标 + 清空按钮）----
+        y = drawTargetList(g, panelX, y);
 
         if (compact) {
-            drawStatus(g, panelX, y + 2);
+            drawStatus(g, panelX + PAD, y);
             return;
         }
-        y += 6;
 
         // ---- 目标数量 ----
-        drawButton(g, panelX + 6, y, 18, Component.literal("-"), 0xFF4A4A4A, () -> {
+        drawButton(g, panelX + PAD, y, 18, Component.literal("-"), 0xFF4A4A4A, () -> {
             int next = Math.max(1, TransmutatorConfig.TARGET_COUNT.get() - 1);
             TransmutatorConfig.TARGET_COUNT.set(next);
             save();
             TransmutatorLoop.setTargetTotal(next);
         });
-        drawValueBox(g, panelX + 26, y, 40, String.valueOf(TransmutatorConfig.TARGET_COUNT.get()));
-        drawButton(g, panelX + 68, y, 18, Component.literal("+"), 0xFF4A4A4A, () -> {
+        drawValueBox(g, panelX + PAD + 20, y, 44,
+                String.valueOf(TransmutatorConfig.TARGET_COUNT.get()));
+        drawButton(g, panelX + PAD + 66, y, 18, Component.literal("+"), 0xFF4A4A4A, () -> {
             int next = TransmutatorConfig.TARGET_COUNT.get() + 1;
             TransmutatorConfig.TARGET_COUNT.set(next);
             save();
             TransmutatorLoop.setTargetTotal(next);
         });
-        y += 24;
+        y += BTN_H + GAP;
 
         // ---- 模式 ----
         boolean all = TransmutatorConfig.REQUIRE_ALL_THREE.get();
-        drawButton(g, panelX + 6, y, PANEL_W - 12,
+        drawButton(g, panelX + PAD, y, PANEL_W - PAD * 2,
                 Component.translatable(all
                         ? "gui.transmutator_automator.mode_all"
                         : "gui.transmutator_automator.mode_any"),
@@ -137,13 +153,13 @@ public class TransmutatorPanel {
                     TransmutatorConfig.REQUIRE_ALL_THREE.set(!all);
                     save();
                 });
-        y += 26;
+        y += BTN_H + GAP;
 
-        // ---- 候选预览：显示"会点哪个" ----
-        drawCandidatePreview(g, panelX, y);
-        y += 34;
+        // ---- 候选预览 ----
+        drawCandidatePreview(g, panelX + PAD, y);
+        y += SLOT + GAP;
 
-        drawStatus(g, panelX, y);
+        drawStatus(g, panelX + PAD, y);
     }
 
     /**
@@ -152,35 +168,43 @@ public class TransmutatorPanel {
      * 直接显示物品图标而不是名字 —— 一眼就能认出是什么，
      * 比读文字快，也不必担心名字太长挤爆面板。
      */
-    private static void drawTargetList(GuiGraphics g, net.minecraft.client.Minecraft mc,
-                                       int panelX, int panelY) {
+    private static int drawTargetList(GuiGraphics g, int panelX, int panelY) {
+        int y = panelY;
         if (TARGETS.isEmpty()) {
-            g.drawString(net.minecraft.client.Minecraft.getInstance().font,
+            var mc = net.minecraft.client.Minecraft.getInstance();
+            g.drawString(mc.font,
                     Component.translatable("gui.transmutator_automator.no_targets"),
-                    panelX + 6, panelY + 5, 0x808080, false);
-            return;
+                    panelX + PAD, y + 4, 0x808080, false);
+            y += BTN_H;
+        } else {
+            int rows = Math.min(MAX_ROWS, (TARGETS.size() + COLS - 1) / COLS);
+            for (int i = 0; i < TARGETS.size() && i < COLS * rows; i++) {
+                int ix = panelX + PAD + (i % COLS) * (SLOT + 1);
+                int iy = y + (i / COLS) * (SLOT + 1);
+                g.renderItem(new ItemStack(TARGETS.get(i)), ix, iy);
+                final int idx = i;
+                HOTSPOTS.add(new Hotspot(ix, iy, SLOT, SLOT, () -> {
+                    TARGETS.remove(idx);
+                    save();
+                }));
+            }
+            int lineW = COLS * (SLOT + 1);
+            if (TARGETS.size() > COLS * rows) {
+                var mc = net.minecraft.client.Minecraft.getInstance();
+                g.drawString(mc.font,
+                        Component.literal("+" + (TARGETS.size() - COLS * rows)),
+                        panelX + PAD + lineW, y + 6, 0xA0A0A0, false);
+            }
+            y += rows * (SLOT + 1);
         }
-        for (int i = 0; i < TARGETS.size() && i < COLS * MAX_ROWS; i++) {
-            int ix = panelX + 6 + (i % COLS) * (SLOT + 1);
-            int iy = panelY + (i / COLS) * (SLOT + 1);
-            g.renderItem(new ItemStack(TARGETS.get(i)), ix, iy);
-            final int idx = i;
-            HOTSPOTS.add(new Hotspot(ix, iy, SLOT, SLOT, () -> {
-                TARGETS.remove(idx);
-                save();
-            }));
-        }
-        if (TARGETS.size() > COLS * MAX_ROWS) {
-            g.drawString(mc.font, Component.literal("+" + (TARGETS.size() - COLS * MAX_ROWS)),
-                    panelX + 6 + COLS * (SLOT + 1), panelY + 6, 0xA0A0A0, false);
-        }
-        // 清空
-        drawButton(g, panelX + 6, panelY + MAX_ROWS * (SLOT + 1), PANEL_W - 12,
+        // 清空按钮紧跟实际内容高度，不写死 MAX_ROWS
+        drawButton(g, panelX + PAD, y, PANEL_W - PAD * 2,
                 Component.translatable("gui.transmutator_automator.clear"),
                 0xFF5A3A3A, () -> {
                     TARGETS.clear();
                     save();
                 });
+        return y + BTN_H + GAP;
     }
 
     /**
@@ -245,31 +269,51 @@ public class TransmutatorPanel {
 
     // ==================== 绘制工具 ====================
 
+    /**
+     * 画面板底板。
+     * <p>
+     * <b>刻意不画标题</b>：早先标题画在 y+2，而底板从 y-2 起画，
+     * 结果标题正好压在上边框上（截图里可见）。删掉标题后：
+     * 边框从 y 开始、内容从 {@link #PAD_Y} 开始，两者不再打架。
+     * <p>
+     * 面板没有标题也不影响辨识 —— 它就贴在嬗变台旁边，位置本身就是标识。
+     */
     private static void drawPanel(GuiGraphics g, int x, int y, boolean compact) {
-        int h = compact ? 60 : 158;
+        int h = compact ? 56 : PANEL_H;
         // 半透明底板：不遮住嬗变台本体，又能看清边界
-        g.fill(x - 2, y - 2, x + PANEL_W + 2, y + h, 0xB0101010);
-        outline(g, x - 2, y - 2, 0xFF505050);
-        g.drawString(net.minecraft.client.Minecraft.getInstance().font,
-                Component.translatable("gui.transmutator_automator.short_title"),
-                x + 4, y + 2, 0x606060, false);
+        g.fill(x, y, x + PANEL_W, y + h, 0xC0101010);
+        outlineBox(g, x, y, PANEL_W, h, 0xFF4A4A4A);
+    }
+
+    /** 画一个矩形边框（不是物品格那种固定 18x18）。 */
+    private static void outlineBox(GuiGraphics g, int x, int y, int w, int h, int color) {
+        g.fill(x, y, x + w, y + 1, color);
+        g.fill(x, y + h - 1, x + w, y + h, color);
+        g.fill(x, y + 1, x + 1, y + h - 1, color);
+        g.fill(x + w - 1, y + 1, x + w, y + h - 1, color);
     }
 
     private static void drawButton(GuiGraphics g, int x, int y, int w, Component text,
                                    int color, Runnable onClick) {
-        g.fill(x, y, x + w, y + 18, color);
         var mc = net.minecraft.client.Minecraft.getInstance();
+        // 垂直居中：按文字实际高度算，而不是写死偏移 ——
+        // 写死偏移在按钮高度或字体变化时就会偏出去压到边框上
+        int th = mc.font.lineHeight;
+        g.fill(x, y, x + w, y + BTN_H, color);
         g.drawString(mc.font, text,
-                x + (w - mc.font.width(text)) / 2, y + 5, 0xFFFFFF, false);
+                x + (w - mc.font.width(text)) / 2, y + (BTN_H - th) / 2, 0xFFFFFF, false);
         if (onClick != null) {
-            HOTSPOTS.add(new Hotspot(x, y, w, 18, onClick));
+            HOTSPOTS.add(new Hotspot(x, y, w, BTN_H, onClick));
         }
     }
 
     private static void drawValueBox(GuiGraphics g, int x, int y, int w, String value) {
-        g.fill(x, y, x + w, y + 18, 0xFF303030);
         var mc = net.minecraft.client.Minecraft.getInstance();
-        g.drawString(mc.font, value, x + (w - mc.font.width(value)) / 2, y + 5, 0xDDDDDD, false);
+        int th = mc.font.lineHeight;
+        g.fill(x, y, x + w, y + BTN_H, 0xFF303030);
+        outlineBox(g, x, y, w, BTN_H, 0xFF5A5A5A);
+        g.drawString(mc.font, value, x + (w - mc.font.width(value)) / 2,
+                y + (BTN_H - th) / 2, 0xDDDDDD, false);
     }
 
     private static void outline(GuiGraphics g, int x, int y, int color) {

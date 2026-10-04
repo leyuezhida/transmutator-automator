@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 它的方法名在不同环境下不一样：
  * <ul>
  *   <li>开发环境（runClient）：{@code mouseClicked}；</li>
- *   <li>生产环境（装进整合包）：被混淆成 SRG 名 {@code m_8905_}。</li>
+ *   <li>生产环境（装进整合包）：被混淆成 SRG 名 {@code m_6375_}。</li>
  * </ul>
  * 三种写法各有各的坑：
  * <ol>
@@ -27,7 +27,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  *   <li>写死 SRG 名 → 开发环境认不出（那里只有源码名）。</li>
  * </ol>
  * <p>
- * <b>本类的解法</b>：写 <b>SRG 名</b>（{@code m_8905_}）+ {@code remap = false} +
+ * <b>本类的解法</b>：写 <b>SRG 名</b>（{@code m_6375_}）+ {@code remap = false} +
  * {@code require = 0}。生产环境认它；开发环境若认不出就静默跳过而不是崩游戏 ——
  * 后果仅是"开发环境里点不动面板"，而那本来就是次要场景。
  * <b>用开发期的可用性换生产期的稳定性</b>：宁可在 runClient 里少个功能，
@@ -43,10 +43,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class MixinAbstractContainerScreen {
 
     /**
-     * {@code m_8905_} 是生产环境里 {@code mouseClicked} 的 SRG 名。
+     * {@code m_6375_} 是生产环境里 {@code mouseClicked} 的 SRG 名。
      * {@code require = 0}：找不到注入目标时跳过而不是抛异常。
      */
-    @Inject(method = "m_8905_", at = @At("TAIL"), remap = false, require = 0)
+    @Inject(method = "m_6375_", at = @At("TAIL"), remap = false, require = 0)
     private void ta$onClick(double mouseX, double mouseY, int button,
                             CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValue()) {
