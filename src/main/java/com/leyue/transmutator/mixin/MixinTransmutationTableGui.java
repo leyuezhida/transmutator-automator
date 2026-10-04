@@ -36,29 +36,33 @@ public abstract class MixinTransmutationTableGui {
     /**
      * 在界面的 {@code render} 末尾画面板。
      * <p>
-     * <b>为什么挂 render 而不是 renderBg</b>：这是本次踩过的坑。
-     * 父类 {@code AbstractContainerScreen} 里 {@code renderBg} 是<b>抽象声明</b>，
-     * 调用点用的方法名是未混淆的 {@code renderBg}；
-     * 而子类 {@code GUITransmutationTable} 的实现才叫 {@code m_7286_}。
-     * 往子类注入 {@code m_7286_} 时 Mixin 找不到目标，
-     * 而<b>无效注入默认只 warning 不报错</b> ——
-     * 表现是"代码写对了、Mixin 也没报错、但面板就是不出来"。
+     * <b>为什么 {@code remap} 必须是默认的 true</b>：这个类虽然属于 Alex's Mobs，
+     * 但 {@code render} 方法<b>是 Minecraft 的方法</b>（父类 {@code AbstractContainerScreen}
+     * 声明，Alex's Mobs 只是覆写它）。在 dev 环境的 jar 里它叫 {@code m_88315_}
+     * 而不叫 {@code render}，所以 {@code remap = false} 会按字面名字找、找不到目标，
+     * <b>静默跳过</b> —— 表现就是"Mixin 没报错、代码也对，但面板就是不出来"。
+     * 只有让 Mixin 走 refmap，才能把它映射到当前环境的实际名字。
      * <p>
-     * 挂在 {@code render} 的 TAIL 最稳：它一定被调用，且此时背景与内容都已画完，
+     * <b>类上的 {@code remap = false} 只影响"目标类名"与"本类新增成员"的映射</b>，
+     * 不会阻止方法注入单独指定 remap。所以类保持 {@code remap = false}
+     * （{@code GUITransmutationTable} 本身不是 Forge 映射的产物），
+     * 而这个注入点单独用默认的 {@code remap = true}。
+     * <p>
+     * <b>为什么挂 render 而不是 renderBg</b>：父类的 {@code renderBg} 是抽象声明，
+     * 调用点用未混淆名，而子类实现叫 {@code m_7286_} —— 注入哪个都匹配不上。
+     * {@code render} 一定被调用，且 TAIL 时背景与内容都已画完，
      * 面板不会被原版元素盖住。
-     * <p>
-     * <b>为什么不挂父类的 render</b>：那会让所有容器界面都走这段绘制。
-     * 限定在嬗变台子类上，只有它会用到面板。
      */
-    @Inject(method = "render", at = @At("TAIL"), remap = false)
+    @Inject(method = "m_88315_", at = @At("TAIL"), remap = false, require = 0)
     private void ta$renderPanel(GuiGraphics graphics, int mouseX, int mouseY, float partialTick,
                                 CallbackInfo ci) {
         var screen = (AbstractContainerScreen<?>) (Object) this;
         var mc = net.minecraft.client.Minecraft.getInstance();
-        // leftPos / topPos 是 protected，跨包取不到，必须走 @Accessor
-        var accessor = (MixinTransmutationTableGuiAccessor) (Object) this;
-        int gx = accessor.ta$getLeftPos();
-        int gy = accessor.ta$getTopPos();
+        // 直接用 AbstractContainerScreen 的 public getGuiLeft()/getGuiTop()。
+        // 不用 leftPos 字段是因为它是 protected 且在生产环境被混淆，
+        // 而这两个 public 方法在两个环境下名字一致，不需要任何 remap 处理。
+        int gx = screen.getGuiLeft();
+        int gy = screen.getGuiTop();
         // 一次性诊断：确认注入点真的命中（正常只打一次）
         if (!announced) {
             announced = true;
