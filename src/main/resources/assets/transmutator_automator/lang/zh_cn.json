@@ -32,5 +32,6 @@
   "log.transmuted": "嬗变第 {} 次：选第 {} 个候选 {}",
   "log.choice_out_of_range": "候选下标越界：{}，已忽略",
   "gui.transmutator_automator.found": "已出现目标物品：%s",
-  "gui.transmutator_automator.closed": "界面已关闭"
+  "gui.transmutator_automator.closed": "界面已关闭",
+  "log.avoidance": "堆叠上限：槽位={} 候选=[{}, {}, {}] 实选第 {} 个"
 }

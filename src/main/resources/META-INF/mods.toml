@@ -6,8 +6,13 @@ license="${mod_license}"
 modId="${mod_id}"
 version="${mod_version}"
 # Display name comes from gradle/mod_text.properties: pure ASCII with
-# \uXXXX escapes, because Groovy reads .properties with the platform
+# Unicode escapes, because Groovy reads .properties with the platform
 # encoding (GBK on this machine) and would mangle Chinese written here.
+#
+# Note: do not write an escape prefix in this file either. expand() resolves
+# it here as well, which glued the following comment lines onto the value of
+# the line above and produced version="1.0.1XXXX escapes, ...". Cost an
+# afternoon on 2026-10-05.
 displayName="${mod_display_name}"
 # Mod list icon, 128x128
 logoFile="logo.png"

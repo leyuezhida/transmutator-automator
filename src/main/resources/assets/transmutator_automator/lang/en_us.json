@@ -32,5 +32,6 @@
   "log.transmuted": "Transmutation {}: picked candidate {} {}",
   "log.choice_out_of_range": "Candidate index out of range: {}, ignored",
   "gui.transmutator_automator.found": "Found target: %s",
-  "gui.transmutator_automator.closed": "Screen closed"
+  "gui.transmutator_automator.closed": "Screen closed",
+  "log.avoidance": "Stack limits: slot={} candidates=[{}, {}, {}] picked #{}"
 }

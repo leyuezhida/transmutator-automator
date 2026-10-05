@@ -173,6 +173,16 @@ public final class TransmutatorLoop {
             TransmutatorLog.infoT("log.transmuted",
                     transmuted, choice + 1, ItemNamer.describe(picked));
         }
+        // 诊断（1.0.1 新增）：避让规则是本版的核心改动，必须能验证它真的在生效。
+        // 每 20 次打一条当前上限与三个候选的上限，一眼就能看出有没有避开。
+        if (transmuted % 20 == 0) {
+            TransmutatorLog.infoT("log.avoidance",
+                    currentStackLimit(),
+                    CandidateSnapshot.get(0).getMaxStackSize(),
+                    CandidateSnapshot.get(1).getMaxStackSize(),
+                    CandidateSnapshot.get(2).getMaxStackSize(),
+                    choice + 1);
+        }
         return true;
     }
 
@@ -195,55 +205,72 @@ public final class TransmutatorLoop {
     }
 
     /**
-     * 在三个候选里挑一个"点了不会让数量变多"的。
+     * 在三个候选里挑一个"堆叠上限与当前物品相同"的。
      * <p>
-     * 实测（2026-10-05）：雪球上限 16 → 木棍上限 64，嬗变后 1 个变 4 个。
-     * 数量膨胀会让被换出物品的权重按 log₁₀(N)⁴ 疯涨，把其他物品压得太低，
-     * 目标反而更难刷出来。所以优先挑堆叠上限不高于当前物品的。
+     * <b>1.0.1 的规则：严格避开所有堆叠上限不同的候选</b>，
+     * 不只是"会变多"的那些。
      * <p>
-     * 三个都不满足时退而求其次点第一个 —— 宁可数量涨一点，
-     * 也别让循环卡着不动（卡着不动等于完全刷不到东西）。
+     * <b>为什么连"上限变小"的也要避</b>（这是 1.0.0 漏掉的）：
+     * 0.1.0 只避开 {@code candidateMax > currentMax}，理由是"避免立即膨胀"。
+     * 但上限变小同样有隐患 —— 数量当时虽然不变（被 {@code max(候选数, 1)} 兜住），
+     * <b>下一次转换就会突然放大</b>：
+     * <pre>
+     *   泥土(64) → 雪球(16)  得到 1 个雪球（数量没变，看起来安全）
+     *   雪球(16) → 木棍(64)  得到 4 个木棍 ← 突然膨胀
+     * </pre>
+     * 也就是说"变小的安全"只是延后了爆炸，物品在上限不同的空间里跳来跳去，
+     * 每次跳都是一次权重扰动。所以只要上限对不上就跳过。
+     * <p>
+     * <b>三个都不满足时选"上限数值最接近"的</b>，而不是第一个：
+     * 数量换算是 {@code 新数量 = 原数量 × 新上限 / 原上限}，
+     * 上限越接近倍数越接近 1，扰动越小。卡着不动等于完全刷不到东西，
+     * 所以必须退让，但退让也要退得最省。
      *
      * @return 候选下标；全空时 -1
      */
     private static int pickSafe() {
+        int currentMax = currentStackLimit();
         int fallback = -1;
+        int fallbackGap = Integer.MAX_VALUE;
+
         for (int i = 0; i < 3; i++) {
             ItemStack stack = CandidateSnapshot.get(i);
             if (stack.isEmpty()) {
                 continue;
             }
-            if (fallback < 0) {
-                fallback = i;
-            }
-            if (!wouldGrowCount(stack)) {
+            int candidateMax = stack.getMaxStackSize();
+            // 上限相同：完美，数量必然不变
+            if (currentMax <= 0 || candidateMax == currentMax) {
                 return i;
+            }
+            // 记下"差距最小"的作为退让目标
+            int gap = Math.abs(candidateMax - currentMax);
+            if (fallback < 0 || gap < fallbackGap) {
+                fallback = i;
+                fallbackGap = gap;
             }
         }
         return fallback;
     }
 
     /**
-     * 嬗变成这个候选后，槽位里的数量会不会变多。
+     * 当前孖变台输入槽的堆叠上限。
      * <p>
-     * 服务端换算：{@code 新数量 = floor(原数量 / (原上限 / 新上限))}，
-     * 等价于 {@code 原数量 × 新上限 / 原上限} —— 新上限更高时结果更大。
+     * 槽位为空或不可堆叠时返回 0，表示"没有可比的基准"，
+     * 此时 {@link #pickSafe()} 会直接接受第一个候选。
      * <p>
-     * <b>为什么比堆叠上限而不是比物品大小</b>：决定数量的是"这一组还能装多少个"，
-     * 模组物品的堆叠上限常被改写（有的模组给工具设成 1），
-     * 直接读 {@link ItemStack#getMaxStackSize()} 才能和服务端算出同一个结果。
+     * <b>为什么用 {@code ItemStack} 而不是裸 {@code Item}</b>：
+     * 服务端换算用的是 {@code Item.getMaxStackSize(ItemStack)} 这个重载，
+     * 它<b>不是 final</b>（无参版本才是），模组可以按栈内容动态改上限。
+     * {@link ItemStack#getMaxStackSize()} 内部正是调那个可覆写的重载，
+     * 所以读到的值和服务端算出来的完全一致。
      */
-    private static boolean wouldGrowCount(ItemStack candidate) {
+    private static int currentStackLimit() {
         ItemStack current = currentSlotStack();
-        if (current.isEmpty() || !current.isStackable() || !candidate.isStackable()) {
-            return false;
+        if (current.isEmpty() || !current.isStackable()) {
+            return 0;
         }
-        int currentMax = current.getMaxStackSize();
-        int candidateMax = candidate.getMaxStackSize();
-        if (currentMax <= 0 || candidateMax <= 0) {
-            return false;
-        }
-        return candidateMax > currentMax;
+        return current.getMaxStackSize();
     }
 
     /**
@@ -255,7 +282,8 @@ public final class TransmutatorLoop {
      * <p>
      * <b>为什么不按下标硬编码</b>：布局由 Alex's Mobs 决定，
      * 猜"第 0 个是输入槽"在对方改布局时会静默读错，
-     * 而读错会让 {@link #wouldGrowCount} 判断失效，又回到权重被压的老问题。
+     * 而读错会让 {@link #currentStackLimit()} 拿到别的物品的上限，
+     * 避让规则就会按错误的基准生效。
      */
     private static ItemStack currentSlotStack() {
         var player = Minecraft.getInstance().player;

@@ -35,13 +35,27 @@ log 增长极快。**只点目标**意味着"哪些物品被换出"不受控 —
 
 The table's weights are cumulative, and removing an item costs `log10(count)^4`. Only clicking the target leaves which items get consumed to chance, so their weights get pressed down and the target becomes harder to roll. Transmuting continuously keeps the amount consumed under control.
 
-### 避开让数量膨胀的选项
+### 避开堆叠上限不同的选项
 
 数量换算在服务端做：`新数量 = floor(原数量 × 新堆叠上限 / 原堆叠上限)`。所以雪球（上限 16）嬗变后可能变成 4 个木棍（上限 64）。
 
-每点一次物品就变多，被换出物品的权重按 log 疯涨，其他物品权重被迅速压低。**所以模组会优先选堆叠上限不高于当前物品的候选**，把权重扰动压到最小。三个都会膨胀时才退而求其次点第一个 —— 宁可数量涨一点也别卡着不动。
+每点一次物品就变多，被换出物品的权重按 log 疯涨，其他物品权重被迅速压低。
 
-The server computes `newCount = floor(count * newMax / oldMax)`, so a higher stack limit multiplies what you hold. Candidates that would grow the stack are skipped in favour of one that cannot; if all three would grow it, the first is taken, since a stalled loop produces nothing.
+**1.0.1 起，模组避开所有堆叠上限与当前物品不同的候选**，而不只是"会变多"的那些。原因是"上限变小"只是把膨胀延后：
+
+```
+泥土(64) → 雪球(16)   得到 1 个雪球（数量没变，看着安全）
+雪球(16) → 木棍(64)   得到 4 个木棍  ← 突然膨胀
+```
+
+物品在上限不同的空间里来回跳，每一次跳都是一次权重扰动。三个候选上限都对不上时，**选数值最接近的那个**（换算倍数最接近 1，扰动最小）——卡着不动等于完全刷不到东西。
+
+> ⚠️ **建议槽位里放上限为 64 的普通物品**（泥土、木棍、石头之类）。
+> 如果放的是钻石、煤这类**上限为 1** 的物品，当三个候选都是上限 16 的
+> （雪球、末影珍珠等）时，退让换算会得到 1 × 16 ÷ 1 = **16 个**。
+> 这是服务端公式决定的，模组无法完全避免 —— 只能靠换个起始物品。
+
+The server computes `newCount = floor(count * newMax / oldMax)`, so a higher stack limit multiplies what you hold. Since 1.0.1 every candidate whose stack limit differs from the current item is skipped, not just the ones that grow: a *smaller* limit only defers the problem, as dirt(64) → snowball(16) keeps the count at 1 but the next step to sticks(64) jumps to 4. When none of the three match, the closest limit is taken, since a stalled loop produces nothing. Prefer a stack limit of 64 in the slot; starting from an item with limit 1 means 1 × 16 ÷ 1 = 16 if all three candidates are limit 16, which the server formula makes unavoidable.
 
 ---
 

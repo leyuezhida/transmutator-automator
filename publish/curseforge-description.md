@@ -20,14 +20,18 @@ Logarithms climb fast. When only the target is clicked, whichever items happen t
 
 This mod transmutes continuously instead, which keeps the amount consumed under your control and lets the target actually come up.
 
-It also avoids candidates that would grow the stack. The server computes `newCount = floor(count * newMax / oldMax)`, so a higher stack limit multiplies what you hold: one snowball (limit 16) can become four sticks (limit 64). Every such click inflates the weight penalty, so candidates whose stack limit exceeds the current item's are skipped when another option is available. If all three would grow it, the first is taken — a stalled loop produces nothing at all.
+It also avoids candidates whose stack limit differs from the current item's. The server computes `newCount = floor(count * newMax / oldMax)`, so a higher limit multiplies what you hold: one snowball (limit 16) can become four sticks (limit 64).
+
+Since 1.0.1 every mismatched limit is skipped, not just the growing ones, because a *smaller* limit only defers the problem — dirt(64) → snowball(16) keeps the count at 1, but the next step to sticks(64) jumps to four. When none of the three candidates match, the closest limit is chosen, since a stalled loop produces nothing at all.
+
+> Tip: put an item with a stack limit of 64 in the slot (dirt, sticks, stone). Starting from a limit-1 item such as diamond means that if all three candidates are limit 16, the server formula yields 1 × 16 ÷ 1 = 16. That much is not something a client mod can avoid; changing the starting item is the fix.
 
 ## Features
 
 - **Keeps transmuteing** until a marked item appears, then stops without consuming it
 - **Target picker** layered over the table, with search by Chinese or English name
 - **Live candidate preview** — the panel shows the three current candidates and outlines your target in green, so you can see whether it will be consumed before it happens
-- **Avoids stack-growing candidates** to keep the weight disturbance small
+- **Avoids candidates with a different stack limit** to keep the weight disturbance small
 - **Pauses on low experience** and resumes by itself once you have enough, without losing state
 - **34 localised strings** across English and Simplified Chinese, log messages included
 - **Adjustable interval** from 1 to 20 ticks

@@ -130,10 +130,13 @@ tasks.named('processResources', ProcessResources).configure {
     }
 
     // 中文名称与描述从 gradle/mod_text.properties 读。
-    // 那个文件是纯 ASCII，中文以 \uXXXX 转义 —— Groovy 读 .properties 时用
-    // JVM 默认编码（GBK），直接写中文会被读成乱码，再写进 mods.toml 就成了
-    // 双重编码的乱码，游戏里显示成 "å¬åå°ï¼å¤§"。
-    // properties 规范保证 \uXXXX 与平台编码无关。
+    // 那个文件是纯 ASCII，中文以 Unicode 转义写法存放 —— Groovy 读
+    // .properties 时用 JVM 默认编码（GBK），直接写中文会被读成乱码，
+    // 再写进 mods.toml 就成了双重编码的乱码，游戏里显示成乱码字符。
+    //
+    // ⚠️ 这里刻意不写转义序列的前缀：Groovy 解析本脚本时也会处理它，
+    // 把后面的文字拼进字符串常量，最终污染 mods.toml 的 version 字段
+    // （曾出现 version="1.0.1XXXX escapes, ..."）。2026-10-05 排查过。
     def modText = new Properties()
     file('gradle/mod_text.properties').withInputStream { modText.load(it) }
 
