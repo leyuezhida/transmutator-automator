@@ -35,22 +35,36 @@ import java.util.Set;
  */
 public final class ItemSelector {
 
-    /** 选择器尺寸。 */
+    /** 选择器宽度。高度由内容算出，见 {@link #computeLayout()}。 */
     private static final int W = 200;
-    private static final int H = 176;
-    /** 物品格边长。 */
-    private static final int SLOT = 18;
+    /**
+     * 物品格边长。
+     * <p>
+     * 原来是 18，物品贴图 16×16 塞进去只剩 1px 间隙，成片排列时
+     * 看起来是糊在一起的（玩家反馈"背包物品有重叠"）。
+     * 改成 20 后留出 4px，9 列共 180px，仍在 200 的宽度内。
+     */
+    private static final int SLOT = 20;
     /** 网格列数。 */
     private static final int COLS = 9;
-    /** 网格行数（每页）。 */
+    /** 网格行数（每页）。物品列表固定 4 行。 */
     private static final int ROWS = 4;
     /** 每页物品数。 */
     private static final int PAGE_SIZE = COLS * ROWS;
+
+    /** 背包区标题相对面板顶部的偏移。 */
+    private static final int INV_TITLE_Y = 156;
+    /** 背包网格相对面板顶部的偏移。 */
+    private static final int INV_GRID_Y = 166;
 
     private static boolean open;
     private static int left;
     private static int top;
     private static int page;
+    /** 面板高度，随可用屏幕高度变化。 */
+    private static int height = 252;
+    /** 当前实际显示的背包行数（1~4）。 */
+    private static int invRows = 4;
     private static EditBox search;
 
     /** 过滤后的物品列表（缓存搜索结果，翻页不重复过滤）。 */
@@ -67,9 +81,10 @@ public final class ItemSelector {
         open = true;
         page = 0;
         var mc = net.minecraft.client.Minecraft.getInstance();
-        // 物品很多时网格会很高，限制在屏幕内
-        left = (mc.screen.width - W) / 2;
-        top = Math.max(4, (mc.screen.height - H) / 2);
+        // 先算高度，再据此居中 —— 顺序不能反，否则 top 用的是上一屏的旧高度
+        computeLayout(mc.screen.height);
+        left = Math.max(4, (mc.screen.width - W) / 2);
+        top = Math.max(4, (mc.screen.height - height) / 2);
         applyFilter("");
         if (search == null) {
             search = new EditBox(mc.font, left + 8, top + 26, W - 16, 16,
@@ -88,6 +103,31 @@ public final class ItemSelector {
         // 打开即聚焦：少一次点击，也让"打开→直接打字"这条路径成立。
         // 之前默认不聚焦，玩家点开选择器后打字没反应，得再点一次搜索框才有效。
         search.setFocused(true);
+
+        // 布局诊断：布局是纯坐标计算，一旦算错就会"物品画到面板外面"。
+        // 有这行日志，下次再出现重叠能立刻判断是高度、偏移还是屏幕尺寸的问题。
+        com.leyue.transmutator.core.TransmutatorLog.info(
+                "选择器布局：屏幕={}x{} 面板={}x{} 位置=({},{}) 背包行数={}",
+                mc.screen.width, mc.screen.height, W, height, left, top, invRows);
+    }
+
+    /**
+     * 按屏幕高度算面板高度与背包可显示行数。
+     * <p>
+     * <b>为什么必须算</b>（2026-10-19 玩家反馈"背包物品还是有重叠"）：
+     * 上一版把高度写死成 176，而内容实际排到 top+230 —— 背包网格有 54px
+     * 画到了面板外面，正好叠在嬗变台的槽位上，看起来就是"物品重叠"。
+     * <p>
+     * 固定部分到背包网格起点为止是 {@link #INV_GRID_Y}，之后每行占 {@link #SLOT}，
+     * 再加 6px 底边。屏幕不够高时减少背包行数（最少 1 行），而不是让内容溢出。
+     */
+    private static void computeLayout(int screenHeight) {
+        int avail = screenHeight - 8; // 上下各留 4px
+        int rowsThatFit = (avail - INV_GRID_Y) / SLOT;
+        invRows = Math.max(1, Math.min(4, rowsThatFit));
+        height = INV_GRID_Y + invRows * SLOT + 6;
+        // 极端情况（屏幕比一行背包还矮）兜个底，避免算出超出屏幕的高度
+        height = Math.min(height, avail);
     }
 
     /** 关闭选择器。 */
@@ -260,8 +300,8 @@ public final class ItemSelector {
         // ② 底板用完全不透明（alpha=FF）。
         //    之前是 0xF0（240/255），理论上几乎不透，但叠在亮色 GUI 上
         //    仍能看出底下的槽位轮廓，视觉上像是"半透明浮窗"，容易误以为点得动底下。
-        g.fill(left, top, left + W, top + H, 0xFF101014);
-        box(g, left, top, W, H, 0xFF505050);
+        g.fill(left, top, left + W, top + height, 0xFF101014);
+        box(g, left, top, W, height, 0xFF505050);
         g.drawString(mc.font,
                 Component.translatable("gui.transmutator_automator.selector_title"),
                 left + 8, top + 8, 0xFFFFFF, true);
@@ -314,19 +354,22 @@ public final class ItemSelector {
                 page < pages - 1 ? 0xFF4A4A4A : 0xFF303030, page < pages - 1 ? () -> page++ : null);
 
         // 玩家背包区
-        int invTop = py + 26;
         g.drawString(mc.font,
                 Component.translatable("gui.transmutator_automator.selector_inventory"),
-                left + 8, invTop, 0x808080, false);
+                left + 8, INV_TITLE_Y, 0x808080, false);
         if (mc.player != null) {
             Inventory inv = mc.player.getInventory();
             for (int slot = 0; slot < 36; slot++) {
+                // 屏幕矮时只显示前几行，绝不画到面板外面去
+                if (slot / COLS >= invRows) {
+                    break;
+                }
                 ItemStack stack = inv.getItem(slot);
                 if (stack.isEmpty()) {
                     continue;
                 }
                 int sx = left + 8 + (slot % COLS) * SLOT;
-                int sy = invTop + 10 + (slot / COLS) * SLOT;
+                int sy = INV_GRID_Y + (slot / COLS) * SLOT;
                 Item it = stack.getItem();
                 drawItem(g, sx, sy, it, targets.contains(it), mouseX, mouseY, () -> {
                     TransmutatorPanel.addTarget(it);
@@ -339,7 +382,8 @@ public final class ItemSelector {
                                  int mouseX, int mouseY, Runnable onClick) {
         g.fill(x, y, x + SLOT, y + SLOT, 0xFF212121);
         box(g, x, y, SLOT, SLOT, already ? 0xFF3A5A3A : 0xFF4A4A4A);
-        g.renderItem(new ItemStack(item), x + 1, y + 1);
+        // 物品贴图 16×16，格子 20×20，左右各留 2px 才不会看起来糊在一起
+        g.renderItem(new ItemStack(item), x + 2, y + 2);
         if (hover(mouseX, mouseY, x, y, SLOT, SLOT)) {
             box(g, x, y, SLOT, SLOT, 0xFFFFFFFF);
             g.renderTooltip(net.minecraft.client.Minecraft.getInstance().font,
@@ -406,7 +450,7 @@ public final class ItemSelector {
                 }
             }
             // 点在选择器底板内但没在任何控件上：仍然消费
-            return mx >= left && mx < left + W && my >= top && my < top + H;
+            return mx >= left && mx < left + W && my >= top && my < top + height;
         }
     }
 }
