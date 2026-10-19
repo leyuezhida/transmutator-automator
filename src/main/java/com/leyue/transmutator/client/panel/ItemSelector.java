@@ -68,9 +68,11 @@ public final class ItemSelector {
     private static int left;
     private static int top;
     private static int page;
-    /** 面板高度，随可用屏幕高度变化。 */
-    private static int height = 252;
-    /** 当前实际显示的背包行数（1~4）。 */
+    /** 面板高度。快捷栏固定一行，因此是定值；留成变量便于以后调整。 */
+    private static int height = 212;
+    /** 上一帧的屏幕尺寸，用于检测窗口缩放后重算布局。 */
+    private static int lastScreenW = -1;
+    private static int lastScreenH = -1;
     /**
      * 箱子区显示的行数。
      * <p>
@@ -101,6 +103,8 @@ public final class ItemSelector {
         var mc = net.minecraft.client.Minecraft.getInstance();
         // 先算高度，再据此居中 —— 顺序不能反，否则 top 用的是上一屏的旧高度
         computeLayout(mc.screen.height);
+        lastScreenW = mc.screen.width;
+        lastScreenH = mc.screen.height;
         left = Math.max(4, (mc.screen.width - W) / 2);
         top = Math.max(4, (mc.screen.height - height) / 2);
         applyFilter("");
@@ -306,18 +310,27 @@ public final class ItemSelector {
         }
         var mc = net.minecraft.client.Minecraft.getInstance();
 
-        // ① 全屏暗色遮罩：把下面的嬗变台、背包、JEI 压暗，
-        //    明确告诉玩家"现在只有这个窗口能用"。
-        //    这既是视觉上的模态提示，也解决了"半透明地显示下方 UI"的观感问题。
-        // ① 全屏**不透明**遮罩。
-        //    之前是 0xC8（约 78% 黑），只是把下层压暗 ——
-        //    玩家反馈的"物品栏重叠"其实是嬗变台原版的背包槽位透过遮罩显形，
-        //    和选择器里的快捷栏挨在一起，两套格子风格不同，看起来像叠在一起。
-        //    既然这个界面是模态的（点击全归它），背景就该彻底不可见，
-        //    否则"看得见但点不动"又会重现。
-        int sw = mc.getWindow().getGuiScaledWidth();
-        int sh = mc.getWindow().getGuiScaledHeight();
-        g.fill(0, 0, sw, sh, 0xFF0E0E12);
+        // 窗口尺寸变了就重算布局。
+        // 原来只在 open() 时算一次，玩家中途缩放窗口后选择器会停在旧坐标上，
+        // 与应该盖住的区域错开 —— 看起来又是一次"错位"。
+        int curW = mc.screen.width;
+        int curH = mc.screen.height;
+        if (curW != lastScreenW || curH != lastScreenH) {
+            computeLayout(curH);
+            left = Math.max(4, (curW - W) / 2);
+            top = Math.max(4, (curH - height) / 2);
+            lastScreenW = curW;
+            lastScreenH = curH;
+        }
+
+        // 全屏**不透明**遮罩。
+        // 之前是 0xC8（约 78% 黑），只是压暗 —— 嬗变台原版的背包槽位会透出来，
+        // 和选择器里的快捷栏挨在一起，两套格子风格不同，看起来像叠在一起。
+        // 既然这个界面是模态的（点击全归它），背景就该彻底不可见。
+        //
+        // 注意：这条遮罩盖不住原版 HUD 热键栏 —— HUD 在 Screen 渲染之后单独绘制，
+        // 已由 TransmutatorScreenEvents#onRenderGuiOverlay 单独取消。
+        g.fill(0, 0, curW, curH, 0xFF0E0E12);
 
         // ② 底板用完全不透明（alpha=FF）。
         //    之前是 0xF0（240/255），理论上几乎不透，但叠在亮色 GUI 上
@@ -353,13 +366,17 @@ public final class ItemSelector {
             page = 0;
         }
         for (int i = 0; i < PAGE_SIZE; i++) {
-            int index = page * PAGE_SIZE + i;
-            if (index >= filtered.size()) {
-                break;
-            }
-            Item item = filtered.get(index);
             int sx = left + 8 + (i % COLS) * SLOT;
             int sy = gridTop + (i / COLS) * SLOT;
+            int index = page * PAGE_SIZE + i;
+            if (index >= filtered.size()) {
+                // 最后一页不满时也要把格子画出来。
+                // 以前直接 break，剩余位置是空白 —— 物品看起来像浮在面板上，
+                // 分不清"这里没有物品"和"这里少画了一格"。
+                drawEmptySlot(g, sx, sy);
+                continue;
+            }
+            Item item = filtered.get(index);
             drawItem(g, sx, sy, item, targets.contains(item), mouseX, mouseY, () -> {
                 TransmutatorPanel.addTarget(item);
             });
@@ -392,18 +409,33 @@ public final class ItemSelector {
             // 面板高度因此固定，不会再被屏幕高度逼着压缩；
             // 主背包里的物品仍可通过上面的搜索找到。
             for (int slot = 0; slot < COLS; slot++) {
-                ItemStack stack = inv.getItem(slot);
-                if (stack.isEmpty()) {
-                    continue;
-                }
                 int sx = left + 8 + slot * SLOT;
                 int sy = top + INV_GRID_Y;
+                ItemStack stack = inv.getItem(slot);
+                if (stack.isEmpty()) {
+                    // 空格子照样画框：9 格等距排开，玩家一眼能看出
+                    // "这是快捷栏的第几格"，而不是一堆物品挤在一起。
+                    drawEmptySlot(g, sx, sy);
+                    continue;
+                }
                 Item it = stack.getItem();
                 drawItem(g, sx, sy, it, targets.contains(it), mouseX, mouseY, () -> {
                     TransmutatorPanel.addTarget(it);
                 });
             }
         }
+    }
+
+    /**
+     * 空格子：只有底色与边框。
+     * <p>
+     * 存在的意义是"占位"—— 之前空槽直接跳过不画，导致剩余位置一片空白，
+     * 物品看起来像浮在面板上、间距忽大忽小，很容易被当成"重叠/错位"。
+     * 画上框之后每一格的位置都是确定的，也顺便让 9 格快捷栏能数得清。
+     */
+    private static void drawEmptySlot(GuiGraphics g, int x, int y) {
+        g.fill(x, y, x + SLOT, y + SLOT, 0xFF17171C);
+        box(g, x, y, SLOT, SLOT, 0xFF34343A);
     }
 
     private static void drawItem(GuiGraphics g, int x, int y, Item item, boolean already,
