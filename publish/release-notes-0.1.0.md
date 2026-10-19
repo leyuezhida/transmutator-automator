@@ -53,7 +53,6 @@ A **client-side** Forge mod (1.20.1) that automates the **Transmutation Table** 
 
 ### 已知取舍
 
-- 破坏是瞬时的，不模拟挖掘时间（让行为可预测，也避免"挖到一半被打断"的中间态）
 - 槽位里的物品会被消耗 —— 这是嬗变台本身的规则，物品不足时循环自然停止
 - 依赖 Alex's Mobs 的内部类，该模组大版本更新时可能需要适配
 

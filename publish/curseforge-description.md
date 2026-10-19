@@ -33,7 +33,7 @@ Since 1.0.1 every mismatched limit is skipped, not just the growing ones, becaus
 - **Live candidate preview** — the panel shows the three current candidates and outlines your target in green, so you can see whether it will be consumed before it happens
 - **Avoids candidates with a different stack limit** to keep the weight disturbance small
 - **Pauses on low experience** and resumes by itself once you have enough, without losing state
-- **34 localised strings** across English and Simplified Chinese, log messages included
+- **35 localised strings** across English and Simplified Chinese, log messages included
 - **Adjustable interval** from 1 to 20 ticks
 - **No world writes** — nothing is persisted, removing the mod leaves nothing behind
 
@@ -71,8 +71,8 @@ Commands are kept as a secondary path for scripts or when the panel is inconveni
 
 ## Notes
 
-Breaking is instantaneous, which keeps the behaviour predictable and avoids half-finished states.
 The item in the slot is consumed — that is the table's own rule — so the loop stops on its own when nothing is left to transmute.
+The selector is a full-screen modal, so it hides the player's inventory slots while open; they come back when it closes.
 This mod reads Alex's Mobs internals, so a major update of that mod may require an update here.
 
 ## Credits

@@ -61,15 +61,15 @@ The server computes `newCount = floor(count * newMax / oldMax)`, so a higher sta
 
 ## 功能
 
-- **自动循环字变**，直到出现标记物品
+- **自动循环嬗变**，直到出现标记物品
 - **物品选择器**（叠在嬗变台之上）：支持中文名与英文名搜索，可选注册表里的任意物品
-- **避开数量膨胀的候选**，把权重扰动压到最小
+- **避开堆叠上限不同的候选**，把权重扰动压到最小
 - **经验不足自动暂停**，经验够了自动继续（不丢状态）
-- **34 项中英文界面**，日志也随语言切换
+- **35 项中英文界面**，日志也随语言切换
 - 嬗变间隔 1–20 tick 可调
 - 不写世界数据，卸载即净
 
-**Auto-transmute** continuously until a target appears, with an item selector layered over the table, stack-growth avoidance, pause-and-resume on low experience, 34 localised strings on both sides of the language divide, an adjustable 1–20 tick interval, and no world writes at all.
+**Auto-transmute** continuously until a target appears, with an item selector layered over the table, stack-limit avoidance, pause-and-resume on low experience, 35 localised strings on both sides of the language divide, an adjustable 1–20 tick interval, and no world writes at all.
 
 ---
 
@@ -123,8 +123,9 @@ The panel previews the three live candidates and outlines a hit in green, so you
 
 ## 已知取舍 / Known trade-offs
 
-- **破坏是瞬时的**，不模拟挖掘时间 —— 这让行为可预测，也避免"挖到一半被打断"的复杂状态。
-  **Breaking is instantaneous**, which keeps behaviour predictable and avoids half-dug states.
+- **选择器打开时会隐藏画面里的玩家背包槽位**（含热键栏），关闭后恢复。
+  它是全屏模态界面，下层任何残留都会和它自己的快捷栏叠在一起。
+  **While the selector is open, the player's inventory slots are hidden**, hotbar included, and restored on close — it is a full-screen modal, and anything showing underneath would collide with its own hotbar row.
 - **槽位里的物品会被消耗**（这是嬗变台本身的规则），物品不足时循环会自然停下。
   **The item in the slot is consumed** — that is the table's own rule; the loop stops when there is nothing left to transmute.
 - 依赖 Alex's Mobs 的内部类（`MessageTransmuteFromMenu`），该模组大版本更新时可能需要适配。
