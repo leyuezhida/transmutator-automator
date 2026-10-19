@@ -105,11 +105,14 @@ public abstract class MixinAbstractContainerScreen {
         if (slot == null || !(slot.container instanceof Inventory)) {
             return false;
         }
-        if (ItemSelector.isOpen()) {
-            // 选择器铺满屏幕，任何背包物品透出来都会跟它自己的快捷栏叠在一起
-            return true;
-        }
-        // 平时只藏主背包（9~35），保留热键栏（0~8）以便往嬗变台里放物品
-        return slot.getContainerSlot() >= 9;
+        // 只在选择器打开时隐藏，关掉就全部恢复。
+        //
+        // 上一版在关闭后仍然藏着主背包（只留热键栏），理由是"放物品够用"——
+        // 结果是玩家打开嬗变台发现 27 格背包空了，以为物品丢了
+        // （2026-10-19 反馈："在嬗变台界面内背包物品为什么不显示了"）。
+        //
+        // 嬗变台界面里的背包是玩家平时整理物品的地方，不是本模组可以
+        // 长期占用的区域。它只在选择器这个全屏模态期间让位。
+        return ItemSelector.isOpen();
     }
 }
