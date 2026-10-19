@@ -63,6 +63,26 @@ public abstract class MixinAbstractContainerScreen {
     }
 
     /**
+     * 选择器打开时，禁止嬗变台界面弹自己的物品提示。
+     * <p>
+     * <b>为什么需要这条</b>（2026-10-19 玩家反馈"文本重叠"）：
+     * 上面只是取消了槽位的<b>图标</b>渲染，但玩家把鼠标移到原槽位所在位置时，
+     * 嬗变台仍会按 "hoveredSlot" 弹一个 tooltip；选择器自己也在同一位置
+     * 画了一个 —— 两个 tooltip 叠在同一个鼠标坐标上，文字就糊成一团。
+     * <p>
+     * 只挡嬗变台的；选择器自己的 tooltip 是直接调 {@code GuiGraphics.renderTooltip}，
+     * 不经过这个方法，不受影响。
+     */
+    @Inject(method = "m_280072_", at = @At("HEAD"), remap = false,
+            require = 0, cancellable = true)
+    private void ta$blockTableTooltip(GuiGraphics graphics, int mouseX, int mouseY,
+                                      CallbackInfo ci) {
+        if ((Object) this instanceof GUITransmutationTable && ItemSelector.isOpen()) {
+            ci.cancel();
+        }
+    }
+
+    /**
      * 是否是要隐藏的槽位：嬗变台界面里的玩家背包槽位。
      * <p>
      * <b>分两种状态</b>（2026-10-19 玩家第二次反馈后调整）：
