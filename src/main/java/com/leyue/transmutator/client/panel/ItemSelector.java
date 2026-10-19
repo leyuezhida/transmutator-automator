@@ -71,7 +71,18 @@ public final class ItemSelector {
     /** 面板高度，随可用屏幕高度变化。 */
     private static int height = 252;
     /** 当前实际显示的背包行数（1~4）。 */
-    private static int invRows = 4;
+    /**
+     * 箱子区显示的行数。
+     * <p>
+     * <b>固定 1 行＝只显示快捷栏</b>（2026-10-19 玩家要求）。
+     * 之前显示 4 行（连主背包一起），在矮屏幕上放不下，面板只能压得很紧，
+     * 玩家看到的"物品栏重叠"其实就是被压到面板外、和嬗变台原版槽位混在一起的东西。
+     * <p>
+     * 只留快捷栏之后：高度稳定，不会被屏幕高度逼着变形；
+     * 而主背包里的东西仍然可以搜到 —— 上面那 13434 个物品是全注册表的，
+     * 不缺主背包那几个。
+     */
+    private static final int INV_ROWS = 1;
     private static EditBox search;
 
     /** 过滤后的物品列表（缓存搜索结果，翻页不重复过滤）。 */
@@ -114,8 +125,8 @@ public final class ItemSelector {
         // 布局诊断：布局是纯坐标计算，一旦算错就会"物品画到面板外面"。
         // 有这行日志，下次再出现重叠能立刻判断是高度、偏移还是屏幕尺寸的问题。
         com.leyue.transmutator.core.TransmutatorLog.info(
-                "选择器布局：屏幕={}x{} 面板={}x{} 位置=({},{}) 背包行数={}",
-                mc.screen.width, mc.screen.height, W, height, left, top, invRows);
+                "选择器布局：屏幕={}x{} 面板={}x{} 位置=({},{}) 快捷栏行数={}",
+                mc.screen.width, mc.screen.height, W, height, left, top, INV_ROWS);
     }
 
     /**
@@ -129,15 +140,10 @@ public final class ItemSelector {
      * 再加 6px 底边。屏幕不够高时减少背包行数（最少 1 行），而不是让内容溢出。
      */
     private static void computeLayout(int screenHeight) {
-        int avail = screenHeight - 8; // 上下各留 4px
-        // 先把底边留白减掉再除，算出来的 height 天然不会超过 avail。
-        //
-        // 上一版是「先按行数算出 height，再 Math.min(height, avail) 截断」——
-        // 截断只改了面板高度，invRows 没跟着减，于是面板被压矮、背包照样画满，
-        // 最后一行就漏到面板外面去了。这是玩家第二次反馈"还是有重叠"的直接原因。
-        int rowsThatFit = (avail - INV_GRID_Y - 6) / SLOT;
-        invRows = Math.max(1, Math.min(4, rowsThatFit));
-        height = INV_GRID_Y + invRows * SLOT + 6;
+        // 只显示快捷栏一行，高度是固定的，与屏幕高度无关 ——
+        // 212px 在任何常见 GUI 高度（240 起）里都放得下，
+        // 不再需要"算几行、再钳制"那套逻辑。上一版的溢出就出在钳制上。
+        height = INV_GRID_Y + INV_ROWS * SLOT + 6;
     }
 
     /** 关闭选择器。 */
@@ -303,9 +309,15 @@ public final class ItemSelector {
         // ① 全屏暗色遮罩：把下面的嬗变台、背包、JEI 压暗，
         //    明确告诉玩家"现在只有这个窗口能用"。
         //    这既是视觉上的模态提示，也解决了"半透明地显示下方 UI"的观感问题。
+        // ① 全屏**不透明**遮罩。
+        //    之前是 0xC8（约 78% 黑），只是把下层压暗 ——
+        //    玩家反馈的"物品栏重叠"其实是嬗变台原版的背包槽位透过遮罩显形，
+        //    和选择器里的快捷栏挨在一起，两套格子风格不同，看起来像叠在一起。
+        //    既然这个界面是模态的（点击全归它），背景就该彻底不可见，
+        //    否则"看得见但点不动"又会重现。
         int sw = mc.getWindow().getGuiScaledWidth();
         int sh = mc.getWindow().getGuiScaledHeight();
-        g.fill(0, 0, sw, sh, 0xC8000000);
+        g.fill(0, 0, sw, sh, 0xFF0E0E12);
 
         // ② 底板用完全不透明（alpha=FF）。
         //    之前是 0xF0（240/255），理论上几乎不透，但叠在亮色 GUI 上
@@ -363,27 +375,25 @@ public final class ItemSelector {
         drawButton(g, left + W - 48, py, 40, Component.literal("▶"),
                 page < pages - 1 ? 0xFF4A4A4A : 0xFF303030, page < pages - 1 ? () -> page++ : null);
 
-        // 玩家背包区
+        // 快捷栏区（只一行）
         g.drawString(mc.font,
-                Component.translatable("gui.transmutator_automator.selector_inventory"),
+                Component.translatable("gui.transmutator_automator.selector_hotbar"),
                 left + 8, INV_TITLE_Y, 0x808080, false);
-        // 给背包网格画一个外框：布局错位时能一眼看出物品有没有跑到框外，
-        // 不用再靠截图猜（这个界面已经因为"看不出来"返工两次）。
-        int invGridH = invRows * SLOT;
+        // 外框：布局错位时能一眼看出物品有没有跑到框外，不用再靠截图猜。
+        int invGridH = INV_ROWS * SLOT;
         box(g, left + 6, INV_GRID_Y - 2, W - 12, invGridH + 4, 0xFF3A3A3A);
         if (mc.player != null) {
             Inventory inv = mc.player.getInventory();
-            for (int slot = 0; slot < 36; slot++) {
-                // 屏幕矮时只显示前几行，绝不画到面板外面去
-                if (slot / COLS >= invRows) {
-                    break;
-                }
+            // 只画快捷栏（slot 0~8）。主背包不显示 ——
+            // 面板高度因此固定，不会再被屏幕高度逼着压缩；
+            // 主背包里的物品仍可通过上面的搜索找到。
+            for (int slot = 0; slot < COLS; slot++) {
                 ItemStack stack = inv.getItem(slot);
                 if (stack.isEmpty()) {
                     continue;
                 }
-                int sx = left + 8 + (slot % COLS) * SLOT;
-                int sy = INV_GRID_Y + (slot / COLS) * SLOT;
+                int sx = left + 8 + slot * SLOT;
+                int sy = INV_GRID_Y;
                 Item it = stack.getItem();
                 drawItem(g, sx, sy, it, targets.contains(it), mouseX, mouseY, () -> {
                     TransmutatorPanel.addTarget(it);

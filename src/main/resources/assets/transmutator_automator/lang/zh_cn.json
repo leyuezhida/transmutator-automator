@@ -18,7 +18,6 @@
   "gui.transmutator_automator.selector_title": "选择目标物品",
   "gui.transmutator_automator.search": "搜索",
   "gui.transmutator_automator.search_hint": "输入物品名，支持中文与英文",
-  "gui.transmutator_automator.selector_inventory": "你的背包",
   "gui.transmutator_automator.transmuted": "已嬗变 %s 次",
   "gui.transmutator_automator.paused": "已暂停（经验不足）",
   "gui.transmutator_automator.interval": "间隔",
@@ -33,5 +32,6 @@
   "log.choice_out_of_range": "候选下标越界：{}，已忽略",
   "gui.transmutator_automator.found": "已出现目标物品：%s",
   "gui.transmutator_automator.closed": "界面已关闭",
-  "log.avoidance": "堆叠上限：槽位={} 候选=[{}, {}, {}] 实选第 {} 个"
+  "log.avoidance": "堆叠上限：槽位={} 候选=[{}, {}, {}] 实选第 {} 个",
+  "gui.transmutator_automator.selector_hotbar": "快捷栏"
 }
