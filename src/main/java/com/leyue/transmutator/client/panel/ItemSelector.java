@@ -376,12 +376,16 @@ public final class ItemSelector {
                 page < pages - 1 ? 0xFF4A4A4A : 0xFF303030, page < pages - 1 ? () -> page++ : null);
 
         // 快捷栏区（只一行）
+        //
+        // ⚠️ INV_TITLE_Y / INV_GRID_Y 是**相对面板顶部**的偏移，必须加 top。
+        // 上一版直接当绝对坐标用了，快捷栏整体上移了 top 那么多像素，
+        // 于是标题压进翻页行、格子叠在物品网格下沿 —— 又一次"重叠"。
         g.drawString(mc.font,
                 Component.translatable("gui.transmutator_automator.selector_hotbar"),
-                left + 8, INV_TITLE_Y, 0x808080, false);
+                left + 8, top + INV_TITLE_Y, 0x808080, false);
         // 外框：布局错位时能一眼看出物品有没有跑到框外，不用再靠截图猜。
         int invGridH = INV_ROWS * SLOT;
-        box(g, left + 6, INV_GRID_Y - 2, W - 12, invGridH + 4, 0xFF3A3A3A);
+        box(g, left + 6, top + INV_GRID_Y - 2, W - 12, invGridH + 4, 0xFF3A3A3A);
         if (mc.player != null) {
             Inventory inv = mc.player.getInventory();
             // 只画快捷栏（slot 0~8）。主背包不显示 ——
@@ -393,7 +397,7 @@ public final class ItemSelector {
                     continue;
                 }
                 int sx = left + 8 + slot * SLOT;
-                int sy = INV_GRID_Y;
+                int sy = top + INV_GRID_Y;
                 Item it = stack.getItem();
                 drawItem(g, sx, sy, it, targets.contains(it), mouseX, mouseY, () -> {
                     TransmutatorPanel.addTarget(it);
