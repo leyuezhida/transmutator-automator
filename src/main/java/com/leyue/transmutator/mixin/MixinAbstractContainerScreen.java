@@ -1,6 +1,7 @@
 package com.leyue.transmutator.mixin;
 
 import com.github.alexthe666.alexsmobs.client.gui.GUITransmutationTable;
+import com.leyue.transmutator.client.panel.ItemSelector;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.player.Inventory;
@@ -62,18 +63,33 @@ public abstract class MixinAbstractContainerScreen {
     }
 
     /**
-     * 是否是要隐藏的槽位：嬗变台界面里的玩家主背包。
+     * 是否是要隐藏的槽位：嬗变台界面里的玩家背包槽位。
      * <p>
-     * 判据是 {@code getContainerSlot() >= 9} —— 玩家 Inventory 的 0~8 是热键栏，
-     * 9~35 是主背包。用这个而不是槽位下标，是因为嬗变台自己的槽位排在玩家背包之前，
-     * 下标会随对方调整菜单布局而变。
+     * <b>分两种状态</b>（2026-10-19 玩家第二次反馈后调整）：
+     * <ul>
+     *   <li><b>选择器打开时</b> → 玩家槽位<b>全部</b>隐藏，连热键栏一起。
+     *       因为嬗变台的热键栏就在界面最下面，和选择器自己的快捷栏位置重合，
+     *       只藏主背包的话两行物品会叠在一起 —— 这正是玩家说的"还是有重叠"。</li>
+     *   <li><b>选择器关闭时</b> → 只藏主背包，保留热键栏。
+     *       热键栏是唯一能把物品点进嬗变台输入槽的通道，全藏了就没法放物品，
+     *       模组也就没法用了。</li>
+     * </ul>
+     * <p>
+     * 判据用 {@code container instanceof Inventory} 而不是菜单下标 ——
+     * 嬗变台把自己的槽位排在玩家背包前面，下标会随对方调整布局而变。
      */
     private boolean ta$isHiddenSlot(Slot slot) {
         if (!((Object) this instanceof GUITransmutationTable)) {
             return false;
         }
-        return slot != null
-                && slot.container instanceof Inventory
-                && slot.getContainerSlot() >= 9;
+        if (slot == null || !(slot.container instanceof Inventory)) {
+            return false;
+        }
+        if (ItemSelector.isOpen()) {
+            // 选择器铺满屏幕，任何背包物品透出来都会跟它自己的快捷栏叠在一起
+            return true;
+        }
+        // 平时只藏主背包（9~35），保留热键栏（0~8）以便往嬗变台里放物品
+        return slot.getContainerSlot() >= 9;
     }
 }
