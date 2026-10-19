@@ -74,6 +74,13 @@ public final class ItemSelector {
     private static int lastScreenW = -1;
     private static int lastScreenH = -1;
     /**
+     * 打开选择器之前的 {@code hideGui} 值；null 表示不是我们改的。
+     * <p>
+     * 记录原值而不是关闭时直接置 false：玩家可能本来就用 F1 关着 HUD，
+     * 直接置 false 会把他自己的设置改掉。
+     */
+    private static Boolean savedHideGui;
+    /**
      * 箱子区显示的行数。
      * <p>
      * <b>固定 1 行＝只显示快捷栏</b>（2026-10-19 玩家要求）。
@@ -126,6 +133,15 @@ public final class ItemSelector {
         // 之前默认不聚焦，玩家点开选择器后打字没反应，得再点一次搜索框才有效。
         search.setFocused(true);
 
+        // 关掉整个 HUD。
+        //
+        // 原版热键栏由 Gui 在界面渲染**之后**单独绘制，不在 Screen 的调用链里，
+        // 所以全屏不透明遮罩盖不住它 —— 之前试过 RenderGuiOverlayEvent 取消
+        // HOTBAR，没有生效（整合包 200+ 模组，走哪条路径不好确定）。
+        // 这里直接从源头关掉：HUD 不渲染，热键栏自然消失，也不依赖任何事件。
+        savedHideGui = mc.options.hideGui;
+        mc.options.hideGui = true;
+
         // 布局诊断：布局是纯坐标计算，一旦算错就会"物品画到面板外面"。
         // 有这行日志，下次再出现重叠能立刻判断是高度、偏移还是屏幕尺寸的问题。
         com.leyue.transmutator.core.TransmutatorLog.info(
@@ -151,8 +167,18 @@ public final class ItemSelector {
     }
 
     /** 关闭选择器。 */
+    /**
+     * 关闭选择器。
+     * <p>
+     * 同时恢复 HUD 显示。这是 {@code hideGui} 唯一的还原点，
+     * 所以任何关闭路径（X 按钮、Esc、关掉嬗变台界面、断线）都必须走到这里。
+     */
     public static void close() {
         open = false;
+        if (savedHideGui != null) {
+            net.minecraft.client.Minecraft.getInstance().options.hideGui = savedHideGui;
+            savedHideGui = null;
+        }
     }
 
     public static boolean isOpen() {

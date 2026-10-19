@@ -427,10 +427,12 @@ public class TransmutatorPanel {
 
     /** 关闭嬖变台界面时一并关掉选择器。 */
     public static void closeSelector() {
-        if (ItemSelector.isOpen()) {
-            ItemSelector.close();
-            ItemSelector.beginFrame();
-        }
+        // 无条件调用，不再用 isOpen() 做守卫。
+        // close() 内部会判断是否真的需要恢复 hideGui；
+        // 如果这里加守卫，一旦 open 标志与 savedHideGui 不一致，
+        // HUD 就永远恢复不了 —— 玩家会以为界面把血条弄没了。
+        ItemSelector.close();
+        ItemSelector.beginFrame();
     }
 
     /** 真正落盘。由界面关闭时调用。 */

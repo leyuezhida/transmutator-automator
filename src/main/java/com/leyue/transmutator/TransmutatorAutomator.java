@@ -77,5 +77,8 @@ public final class TransmutatorAutomator {
     @SubscribeEvent
     public void onLoggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
         TransmutatorLoop.onScreenClosed();
+        // 断线时界面不一定走 ScreenEvent.Closing，这里兜底关掉选择器 ——
+        // 它会顺带恢复 HUD 显示（hideGui）。不恢复的话玩家会以为界面卡住了。
+        com.leyue.transmutator.client.panel.ItemSelector.close();
     }
 }

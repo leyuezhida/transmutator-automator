@@ -9,11 +9,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.fml.common.Mod;
 
 /**
@@ -106,29 +104,6 @@ public final class TransmutatorScreenEvents {
         if (ItemSelector.isOpen()) {
             ItemSelector.beginFrame();
             ItemSelector.render(event.getGuiGraphics(), event.getMouseX(), event.getMouseY());
-        }
-    }
-
-    // ==================== HUD ====================
-
-    /**
-     * 选择器打开时隐藏原版 HUD 热键栏。
-     * <p>
-     * <b>为什么全屏遮罩盖不住它</b>（2026-10-19 玩家第二次指出"怎么把嬗变台界面的
-     * 快捷栏也显示了"）：HUD 由 {@code Gui} 在 <b>界面渲染之后</b> 单独绘制，
-     * 不在 {@code Screen.render} 的调用链里。所以哪怕用不透明色铺满整个屏幕，
-     * 热键栏仍会画在遮罩之上。
-     * <p>
-     * 只取消 {@code HOTBAR} 这一个覆盖层，生命/饥饿/经验等保持原样 ——
-     * 玩家在选物品时仍然能看见自己的血量。
-     */
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onRenderGuiOverlay(RenderGuiOverlayEvent.Pre event) {
-        if (!ItemSelector.isOpen()) {
-            return;
-        }
-        if (event.getOverlay().id().equals(VanillaGuiOverlay.HOTBAR.id())) {
-            event.setCanceled(true);
         }
     }
 
