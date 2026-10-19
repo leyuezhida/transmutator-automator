@@ -437,7 +437,7 @@ public class TransmutatorPanel {
         dirty = true;
     }
 
-    /** 关闭嬖变台界面时一并关掉选择器。 */
+    /** 关闭嬗变台界面时一并关掉选择器。 */
     public static void closeSelector() {
         // 无条件调用，不再用 isOpen() 做守卫。
         // close() 内部会判断是否真的需要恢复 hideGui；

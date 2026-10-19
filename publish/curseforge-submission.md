@@ -141,7 +141,7 @@ publish/cover-240x150.png   → 页面预览图
 | Summary 含第一人称或玩笑 | ✅ 已避免 |
 | Description 语法错误 / 描述不足 | ✅ 用完整英文 |
 | 分类不相关 | ✅ Utility |
-| Logo 用他人素材 | ⚠️ **图标基于 Alex's Mobs 的孖变台渲染图改的** |
+| Logo 用他人素材 | ⚠️ **图标基于 Alex's Mobs 的嬗变台渲染图改的** |
 | 功能夸大 | ✅ 只写已实现的行为 |
 | 未声明依赖 | ✅ 明确列出 Alex's Mobs |
 

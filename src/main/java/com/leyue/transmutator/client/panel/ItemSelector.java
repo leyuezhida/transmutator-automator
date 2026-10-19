@@ -16,9 +16,9 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * 物品选择器：叠在孖变台界面之上的小窗，解决"目标物品不在背包里"的问题。
+ * 物品选择器：叠在嬗变台界面之上的小窗，解决"目标物品不在背包里"的问题。
  * <p>
- * <b>为什么是叠层而不是独立界面</b>：选目标这一个动作不该让人离开孖变台 ——
+ * <b>为什么是叠层而不是独立界面</b>：选目标这一个动作不该让人离开嬗变台 ——
  * 独立界面会遮住当前候选，而"这次会点哪个"恰恰是选目标时要对照的信息。
  * 这与之前"删掉独立 GUI"是同一条判断。
  * <p>
@@ -31,7 +31,7 @@ import java.util.Set;
  * </ol>
  * <p>
  * <b>不写盘</b>：这里只做读操作 + 改内存里的目标列表（{@link TransmutatorPanel#addTarget}），
- * 落盘仍由关闭孖变台界面时统一做 —— 点击事件里同步写文件会导致卡死，那已经踩过一次。
+ * 落盘仍由关闭嬗变台界面时统一做 —— 点击事件里同步写文件会导致卡死，那已经踩过一次。
  */
 public final class ItemSelector {
 
@@ -224,7 +224,7 @@ public final class ItemSelector {
      * <p>
      * <b>先点搜索框</b>：点它才获得焦点，否则玩家没法打字。
      *
-     * @return true 表示点击已被选择器消费（不该再传给孖变台）
+     * @return true 表示点击已被选择器消费（不该再传给嬗变台）
      */
     public static boolean onClick(double mx, double my, int button) {
         if (!open) {

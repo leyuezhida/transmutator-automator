@@ -87,7 +87,7 @@ public final class TransmutatorConfig {
         b.comment("日志：长时间刷取时避免刷屏").push("diag");
 
         LOG_EVERY_TRANSMUTE = b
-                .comment("true = 每次孖变都记一行；",
+                .comment("true = 每次嬗变都记一行；",
                         "false = 每 20 次记一条（推荐，排查问题时再临时打开）")
                 .define("logEveryTransmute", false);
 
@@ -105,7 +105,7 @@ public final class TransmutatorConfig {
     public static final ForgeConfigSpec.IntValue WEIGHT_GAIN_COUNT;
     public static final ForgeConfigSpec.IntValue REROLL_COUNT;
 
-    /** 是否每次嬖变都记日志。 */
+    /** 是否每次嬗变都记日志。 */
     public static boolean logEveryTransmute() {
         return LOG_EVERY_TRANSMUTE.get();
     }

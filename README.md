@@ -81,7 +81,7 @@ The server computes `newCount = floor(count * newMax / oldMax)`, so a higher sta
    Press **+ Add** and pick target items from the selector
 3. 放 **1 个**想嬗变的物品在嬗变台里
    Put **one** item in the table
-4. 打开「自动孖变」开关
+4. 打开「自动嬗变」开关
    Turn on the toggle
 
 面板上的候选项预览会实时显示三个候选，**命中目标的会标绿框** —— 伸手前就知道会不会点掉它。
@@ -98,7 +98,7 @@ The panel previews the three live candidates and outlines a hit in green, so you
 /ta list             查看当前目标
 /ta clear            清空目标
 /ta status           查看状态
-/ta interval <tick>  设置孖变间隔
+/ta interval <tick>  设置嬗变间隔
 ```
 
 ### 快捷键

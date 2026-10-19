@@ -254,7 +254,7 @@ public final class TransmutatorLoop {
     }
 
     /**
-     * 当前孖变台输入槽的堆叠上限。
+     * 当前嬗变台输入槽的堆叠上限。
      * <p>
      * 槽位为空或不可堆叠时返回 0，表示"没有可比的基准"，
      * 此时 {@link #pickSafe()} 会直接接受第一个候选。
@@ -277,7 +277,7 @@ public final class TransmutatorLoop {
      * 当前嬗变台输入槽里的物品。
      * <p>
      * <b>怎么可靠找到那个槽</b>：菜单的 {@code slots} 里前几个是容器自己的槽，
-     * 后面才是玩家背包。判据是 {@link Slot#container} —— 输入槽属于孖变台的容器，
+     * 后面才是玩家背包。判据是 {@link Slot#container} —— 输入槽属于嬗变台的容器，
      * 玩家背包槽的 container 是玩家自己的 Inventory。
      * <p>
      * <b>为什么不按下标硬编码</b>：布局由 Alex's Mobs 决定，

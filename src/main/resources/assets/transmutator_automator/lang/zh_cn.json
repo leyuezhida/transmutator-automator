@@ -1,5 +1,5 @@
 {
-  "commands.ta.usage": "面板就在孖变台界面左侧。指令：/ta mark <物品> | /ta unmark <物品> | /ta list | /ta clear | /ta status | /ta interval <tick>",
+  "commands.ta.usage": "面板就在嬗变台界面左侧。指令：/ta mark <物品> | /ta unmark <物品> | /ta list | /ta clear | /ta status | /ta interval <tick>",
   "commands.ta.unresolved": "无法识别「%s」。请用注册名（如 minecraft:diamond）或游戏内中文名（如 钻石）",
   "commands.ta.added": "已添加标记物品：%s",
   "commands.ta.already": "%s 已经在标记列表里了",
