@@ -36,15 +36,22 @@ import java.util.Set;
 public final class ItemSelector {
 
     /** 选择器宽度。高度由内容算出，见 {@link #computeLayout()}。 */
-    private static final int W = 200;
+    /**
+     * 面板宽度。
+     * <p>
+     * 跟着 {@link #SLOT} 一起放大：9 列 × 24 = 216，左右各留 8，共 232。
+     * 宽度和格子大小是绑定的，改一个另一个必须跟着改。
+     */
+    private static final int W = 232;
     /**
      * 物品格边长。
      * <p>
-     * 原来是 18，物品贴图 16×16 塞进去只剩 1px 间隙，成片排列时
-     * 看起来是糊在一起的（玩家反馈"背包物品有重叠"）。
-     * 改成 20 后留出 4px，9 列共 180px，仍在 200 的宽度内。
+     * 演变过程：18 → 20 → 24。
+     * 18 时 16px 贴图只剩 1px 空隙；20 时留 4px，但玩家的整合包装了
+     * Item Borders 一类模组，会在物品周围额外描边，视觉上又贴回去了。
+     * 24 留出 8px，即使有描边也能清楚分开。
      */
-    private static final int SLOT = 20;
+    private static final int SLOT = 24;
     /** 网格列数。 */
     private static final int COLS = 9;
     /** 网格行数（每页）。物品列表固定 4 行。 */
@@ -53,9 +60,9 @@ public final class ItemSelector {
     private static final int PAGE_SIZE = COLS * ROWS;
 
     /** 背包区标题相对面板顶部的偏移。 */
-    private static final int INV_TITLE_Y = 156;
+    private static final int INV_TITLE_Y = 172;
     /** 背包网格相对面板顶部的偏移。 */
-    private static final int INV_GRID_Y = 166;
+    private static final int INV_GRID_Y = 182;
 
     private static boolean open;
     private static int left;
@@ -123,11 +130,14 @@ public final class ItemSelector {
      */
     private static void computeLayout(int screenHeight) {
         int avail = screenHeight - 8; // 上下各留 4px
-        int rowsThatFit = (avail - INV_GRID_Y) / SLOT;
+        // 先把底边留白减掉再除，算出来的 height 天然不会超过 avail。
+        //
+        // 上一版是「先按行数算出 height，再 Math.min(height, avail) 截断」——
+        // 截断只改了面板高度，invRows 没跟着减，于是面板被压矮、背包照样画满，
+        // 最后一行就漏到面板外面去了。这是玩家第二次反馈"还是有重叠"的直接原因。
+        int rowsThatFit = (avail - INV_GRID_Y - 6) / SLOT;
         invRows = Math.max(1, Math.min(4, rowsThatFit));
         height = INV_GRID_Y + invRows * SLOT + 6;
-        // 极端情况（屏幕比一行背包还矮）兜个底，避免算出超出屏幕的高度
-        height = Math.min(height, avail);
     }
 
     /** 关闭选择器。 */
@@ -357,6 +367,10 @@ public final class ItemSelector {
         g.drawString(mc.font,
                 Component.translatable("gui.transmutator_automator.selector_inventory"),
                 left + 8, INV_TITLE_Y, 0x808080, false);
+        // 给背包网格画一个外框：布局错位时能一眼看出物品有没有跑到框外，
+        // 不用再靠截图猜（这个界面已经因为"看不出来"返工两次）。
+        int invGridH = invRows * SLOT;
+        box(g, left + 6, INV_GRID_Y - 2, W - 12, invGridH + 4, 0xFF3A3A3A);
         if (mc.player != null) {
             Inventory inv = mc.player.getInventory();
             for (int slot = 0; slot < 36; slot++) {
