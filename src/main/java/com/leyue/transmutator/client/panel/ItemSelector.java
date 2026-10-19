@@ -81,9 +81,13 @@ public final class ItemSelector {
                 page = 0;
                 applyFilter(text);
             });
+            // 失焦时不接受字符，避免误输入到别的界面
+            search.setCanLoseFocus(true);
         }
         search.setValue("");
-        search.setFocused(false);
+        // 打开即聚焦：少一次点击，也让"打开→直接打字"这条路径成立。
+        // 之前默认不聚焦，玩家点开选择器后打字没反应，得再点一次搜索框才有效。
+        search.setFocused(true);
     }
 
     /** 关闭选择器。 */
@@ -207,6 +211,32 @@ public final class ItemSelector {
         return false;
     }
 
+    /**
+     * 字符输入。
+     * <p>
+     * <b>这是"搜索框打不进字"的修复</b>（2026-10-19 用户反馈）：
+     * Minecraft 把输入拆成两条路径 —— {@code keyPressed} 只给键码，
+     * 真正带文字的 {@code charTyped} 才是产生字符的地方。
+     * 上一版只接管了前者，所以光标在闪、退格有效，却一个字也打不进去。
+     * <p>
+     * <b>中文为什么也能走这里</b>：输入法组字完成后，最终仍是以
+     * {@code char}（UTF-16 码元）的形式送进 {@code charTyped}，
+     * 与英文没有区别，因此不需要为中文单独做处理。
+     * <p>
+     * 过滤掉控制字符：{@code char} 参数在部分输入法或异常状态下
+     * 会带进 0~31 与 127，直接塞给 EditBox 会弄乱内容。
+     */
+    public static void onChar(char ch, int modifiers) {
+        if (!open || search == null || !search.isFocused()) {
+            return;
+        }
+        if (ch < 32 || ch == 127) {
+            return;
+        }
+        // EditBox 内部走 setValue，会触发 responder，过滤是自动完成的
+        search.charTyped(ch, modifiers);
+    }
+
     /** 每帧渲染前清空命中区。 */
     public static void beginFrame() {
         ItemSelectorHit.clear();
@@ -220,12 +250,29 @@ public final class ItemSelector {
         }
         var mc = net.minecraft.client.Minecraft.getInstance();
 
-        // 底板
-        g.fill(left, top, left + W, top + H, 0xF0101010);
+        // ① 全屏暗色遮罩：把下面的嬗变台、背包、JEI 压暗，
+        //    明确告诉玩家"现在只有这个窗口能用"。
+        //    这既是视觉上的模态提示，也解决了"半透明地显示下方 UI"的观感问题。
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
+        g.fill(0, 0, sw, sh, 0xC8000000);
+
+        // ② 底板用完全不透明（alpha=FF）。
+        //    之前是 0xF0（240/255），理论上几乎不透，但叠在亮色 GUI 上
+        //    仍能看出底下的槽位轮廓，视觉上像是"半透明浮窗"，容易误以为点得动底下。
+        g.fill(left, top, left + W, top + H, 0xFF101014);
         box(g, left, top, W, H, 0xFF505050);
         g.drawString(mc.font,
                 Component.translatable("gui.transmutator_automator.selector_title"),
                 left + 8, top + 8, 0xFFFFFF, true);
+
+        // 右上角关闭按钮。
+        // 之前只能按 Esc 才能退出，界面上没有任何提示 ——
+        // 玩家在不熟悉的界面里第一反应是找关闭按钮，找不到会以为"卡住了"。
+        // 用字母 X 而不是 ×：Minecraft 默认字体对 U+00D7 的覆盖不可靠，
+        // 部分整合包的字体替换后会显示成方块。
+        drawButton(g, left + W - 22, top + 5, 16, Component.literal("X"),
+                0xFF5A2A2A, ItemSelector::close);
 
         // 搜索框
         search.setX(left + 8);

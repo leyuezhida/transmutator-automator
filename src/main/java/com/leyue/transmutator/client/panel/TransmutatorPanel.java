@@ -95,10 +95,19 @@ public class TransmutatorPanel {
         // 这里不重复读配置 —— 否则每帧都要反序列化一遍列表
         HOTSPOTS.clear();
 
-        // 放在嬗变台 GUI 左侧；左侧放不下就改放右侧
+        // 优先放在嬗变台 GUI 左侧。
+        //
+        // ⚠️ 左侧放不下时**不要转到右边**。上一版就是这么写的
+        // （panelX = guiLeft + 176 + 4），结果在 GUI 缩放较大、屏幕逻辑宽度
+        // 不足的玩家那里，面板正好压到 JEI 的物品列表与书签上：
+        // 视觉被遮挡，点击却归 JEI（JEI 走 Forge 事件，优先级比当时的 Mixin 注入高）。
+        // 2026-10-19 用户反馈的"显示与操作优先级不符"就是这个。
+        //
+        // 现在改为贴住屏幕左边缘：宁可压到嬗变台 GUI 的左半边（那里只有标题文字），
+        // 也不去占 JEI 的位置。
         int panelX = guiLeft - PANEL_W - 4;
         if (panelX < 2) {
-            panelX = guiLeft + 176 + 4;
+            panelX = 2;
         }
         int panelY = Math.max(4, guiTop);
         // 屏幕太矮就只画最上面那块（开关 + 目标），其余略去
@@ -160,12 +169,6 @@ public class TransmutatorPanel {
         y += SLOT + GAP;
 
         drawStatus(g, panelX + PAD, y);
-
-        // 选择器最后画：它铺在孖变台之上
-        if (ItemSelector.isOpen()) {
-            ItemSelector.beginFrame();
-            ItemSelector.render(g, mouseX, mouseY);
-        }
     }
 
     /**
@@ -340,8 +343,12 @@ public class TransmutatorPanel {
      */
     private static void drawPanel(GuiGraphics g, int x, int y, boolean compact) {
         int h = compact ? 56 : PANEL_H;
-        // 半透明底板：不遮住嬗变台本体，又能看清边界
-        g.fill(x, y, x + PANEL_W, y + h, 0xC0101010);
+        // 不透明底板。
+        // 之前用 0xC0（192/255）半透明，本意是"不遮住嬗变台本体"，
+        // 但在装了 JEI 的整合包里，透出来的正是 JEI 的书签 ——
+        // 看起来像被一层雾蒙住，玩家会误以为那块还能点。
+        // 面板与操作是绑定的：既然点击归面板，底板就该是完全实心的。
+        g.fill(x, y, x + PANEL_W, y + h, 0xFF14141A);
         outlineBox(g, x, y, PANEL_W, h, 0xFF4A4A4A);
     }
 
